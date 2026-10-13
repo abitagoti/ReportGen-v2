@@ -1,0 +1,42 @@
+﻿name: ReportGen Windows Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Test and Build Windows Installer
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build Windows installer
+        run: npm run build:desktop
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReportGen-Windows-Installer
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 14
