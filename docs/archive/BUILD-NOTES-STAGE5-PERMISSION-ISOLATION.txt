@@ -1,0 +1,66 @@
+ReportGen Stage 5 - Permission Isolation (staff / payroll / deductions / salaries)
+Date: 2026-10-03
+
+Problem
+-------
+A role given only "View staff" (for example the General Manager) could not open the staff list, and the app
+crashed. The staff, payroll and salary areas were also not isolated: salary visibility depended on the role NAME,
+so Owner / General Manager always saw every salary, and "View payroll" also exposed the deductions list.
+
+Root causes found
+-----------------
+1. public/js/pages/payroll.js called can() without importing it (ReferenceError on every load of the Staff page).
+2. The staff and deductions pages loaded everything in one Promise.all. Monthly payroll (payroll.view) and the
+   users list (users.manage) were requested even when the role did not have them, so one 403 blanked the page.
+3. Hiding salaries was decided by role name (isLimited), not by a permission.
+4. GET /api/payroll/deductions was open to payroll.view. Deductions-only roles could not fetch the staff names
+   needed to record a deduction.
+5. public/js/pages/settings.js called an undefined showNotice() when saving the company profile failed.
+6. POST /api/payroll/staff bound an undefined value (req.params.id) when a login account was linked.
+
+Changes
+-------
+New permission: payroll.salaries ("View salaries and per-employee pay")
+- Default ON for Owner, Administrator, General Manager and Accountant; OFF for Business Manager and Viewer.
+- Existing installs: roles that already have saved permissions get payroll.salaries copied from their current
+  payroll.view value (database.js migrateSalaryPermission, idempotent). A role without View payroll therefore
+  stops seeing salaries; nothing else is widened.
+
+Server
+- permissions.js: new permission and defaults.
+- payroll/payrollRoutes.js:
+  * Salaries are shown only with payroll.salaries (staff list, monthly detail, entries, checklist).
+  * Staff list: staff.view, payroll.view, payroll.deductions, payroll.create or payroll.edit (names only without
+    payroll.salaries).
+  * GET /api/payroll/entries needs payroll.view + payroll.salaries (per-employee pay).
+  * GET /api/payroll/deductions needs payroll.deductions only.
+  * GET /api/payroll/manual-checklist needs payroll.view + payroll.salaries.
+  * GET /api/payroll/loans/:id/skips needs payroll.loans.
+  * Create / edit staff: a salary sent by someone without payroll.salaries is ignored (new staff = 0, edit keeps
+    the existing salary). Salary increase needs staff.manage + payroll.salaries.
+- organizationRoutes.js: departments and job roles are controlled by staff.manage, not role name.
+
+Client
+- payroll.js: imports can; each section (staff, businesses, departments, job roles, payroll totals, loans, users)
+  loads only if permitted and a failure in one section shows a message instead of blanking the page.
+  Buttons and the salary column follow permissions. Generate draft follows payroll.create.
+- app.js / state.js: the Payroll page is the totals-only page unless the user has payroll.salaries; Staff uses
+  the read-only directory only for limited roles without staff.manage. bindPayrollPage no longer runs on the
+  accountant / totals-only pages.
+- settings.js: gated by settings.manage; removed the undefined showNotice call.
+
+Tests
+-----
+- tests/permission-isolation.test.js (new, 12 tests): staff.view only, payroll.view only, deductions only,
+  salaries, staff.manage without salaries, organization setup, migration - for General Manager and Business Manager.
+- tests/role-nav-access.test.js: limited roles no longer get View salaries in the "every toggle on" setup.
+- Full suite: 45 of 45 pass.
+
+Not changed (decision for you)
+------------------------------
+- Company-wide vs assigned-business SCOPE is still decided by role (Owner / General Manager / Administrator see
+  every business; others only assigned ones). That is scoping, not a feature permission.
+- The Dashboard net-profit figure still subtracts payroll for anyone with dashboard.view (a total only, no
+  per-employee data).
+- expenses.manage, capital.manage and the Accountant-only expense screens are still role-driven.
+- A role's permissions are loaded at sign-in or page reload; users must reload after you change their role.

@@ -1,0 +1,34 @@
+ReportGen v2 correction build
+Date: 2026-09-24
+
+Implemented:
+- Manual monthly payroll remains an externally calculated gross payroll recording workflow.
+- Manual payroll does not automatically apply staff deductions or loan repayments.
+- Employee-generated payroll caps deductions at gross payroll to prevent negative net pay.
+- Added payroll loan repayment ledger with unique loan/month records.
+- Loan balances now expose total repaid and remaining balance in the loans API.
+- Loan repayment amounts are capped at the remaining balance and monthly repayment amount.
+- Loan repayments are posted when generated employee payroll is saved.
+- Loan repayment ledger entries are removed when the related payroll is deleted.
+- Loans automatically change to completed when the remaining balance reaches zero.
+- Loan start/end month validation now matches deduction validation.
+- Updated manual payroll UI label to clarify that the entered amount is gross payroll calculated externally.
+- Updated payroll page explanatory text.
+
+Notes:
+- Manual payroll is intentionally not recalculated by ReportGen.
+- Generated employee payroll still applies active deductions and scheduled loan repayments.
+- Full npm test execution is blocked in this environment because the xlsx dependency is not installed.
+
+PAYROLL / LOAN / DEDUCTION CORRECTIONS APPLIED
+- Added business-scope authorization to staff updates, staff status changes, and salary increases.
+- Restricted loan listing to assigned businesses.
+- Restricted loan skip-history access to the loan's assigned business.
+- Added a loan repayment void endpoint: POST /api/payroll/loan-repayments/:id/void.
+- Restored active loan status when a completed loan repayment is voided.
+- Removed stale loan-skip records when a manual payroll later applies the loan for that month.
+- Enforced payroll entry equation: deductions = deductionAmount + loanRepaymentAmount.
+- Node syntax validation passed for server/payroll/payrollRoutes.js.
+
+LIMITATION
+- Manual payroll remains a business-level total with staff selection flags; a full staff-level manual gross/deduction/net ledger requires a larger UI and schema extension and was not fabricated in this patch.

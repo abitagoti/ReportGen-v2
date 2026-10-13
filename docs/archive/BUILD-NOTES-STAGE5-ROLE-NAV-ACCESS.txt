@@ -1,0 +1,51 @@
+ReportGen Stage 5 - Role / Navigation Access Fix
+Date: 2026-10-03
+
+Problem
+-------
+A sidebar link is shown whenever the role's permission is enabled, but several pages then called
+API routes that still checked the user's ROLE NAME instead of the permission, so the page opened
+and answered "not permitted" (or failed silently). Found by running the real server and opening
+every sidebar page as every role, with the permission switched on.
+
+Fixes
+-----
+Server
+- reports/reportsRoutes.js: restored the missing totals() helper. Stage 5's POST /api/reports/owner-data
+  called it but it was never defined, so the Owner/General Manager/Administrator Reports page and
+  the Word/Excel exports returned HTTP 500. Assigned-business report exports now accept every
+  limited role (Business Manager, Viewer), not only Business Manager.
+- payroll/payrollRoutes.js: removed the hard-coded role allow-list. Payroll, Staff and Deductions
+  are now decided by payroll.view / staff.view / payroll.deductions. Roles other than
+  Owner/GM/Administrator/Accountant get the limited view: payroll totals only, staff directory
+  without salaries, no employee-level payroll entries.
+- accountant/accountantRoutes.js: GET /api/manager/expenses now serves every limited role that has
+  expenses.view (it was Business Manager only). Still scoped to assigned businesses.
+- businesses/businessRoutes.js: per-business details are readable with businesses.view,
+  comparison.view or reports.view (Company Comparison and Reports both depend on this feed).
+- sales/salesRoutes.js: removed the Accountant-only block on import history; history.view decides.
+- capital/capitalRoutes.js: the Purchases list is scoped to assigned businesses for every limited
+  role (previously only Business Manager, so a Viewer with capital.view saw every business).
+- vendor/vendorPaymentRoutes.js: non-management roles only see vendor payments for their assigned
+  businesses (previously the unfiltered company list).
+- server.js: /api/health build marker is now stage5-role-nav-access-v1.
+
+Client
+- state.js: new isLimitedRole() helper.
+- app.js / pages/manager.js: the assigned-business Expenses, Payroll, Staff and Reports pages are
+  used for every limited role, not only Business Manager. Removed the Accountant redirect that sent
+  Sales, History, Purchases and Company Comparison back to Businesses even when the link was shown.
+
+Tests
+-----
+- tests/role-nav-access.test.js (new): opens every sidebar page's API calls as every role with all
+  permissions enabled, and checks business scoping and salary redaction.
+- Full suite: 33 of 33 pass (27 existing + 6 new). The new test fails on the previous build.
+
+Not changed (decision for you)
+------------------------------
+- expenses.manage, capital.manage-for-Accountant, analytics.view and the Accountant-only expense
+  entry screens are still role-driven. analytics.view has no sidebar link; the Company Comparison
+  link uses comparison.view.
+- A role's permissions are loaded when the user signs in or reloads the page, so a change made in
+  Role permissions applies to that role's users on their next reload.

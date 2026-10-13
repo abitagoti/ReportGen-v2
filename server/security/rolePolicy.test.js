@@ -1,0 +1,18 @@
+const assert=require('node:assert/strict');
+const {isAdministrator,roleLevel,canManageTargetRole,canEditRole}=require('./rolePolicy');
+const user=(role)=>({role});
+assert.equal(isAdministrator(user('administrator')),true);
+assert.equal(isAdministrator(user('owner')),false);
+assert.equal(roleLevel('owner')>roleLevel('general_manager'),true);
+assert.equal(canEditRole('owner','general_manager'),true);
+assert.equal(canEditRole('owner','owner'),false);
+assert.equal(canEditRole('general_manager','general_manager'),false);
+assert.equal(canEditRole('general_manager','owner'),false);
+assert.equal(canEditRole('owner','administrator'),false);
+assert.equal(canEditRole('administrator','administrator'),false);
+assert.equal(canManageTargetRole(user('general_manager'),'owner'),false);
+assert.equal(canManageTargetRole(user('general_manager'),'business_manager'),true);
+assert.equal(canManageTargetRole(user('owner'),'owner'),true);
+assert.equal(canManageTargetRole(user('owner'),'administrator'),false);
+assert.equal(canManageTargetRole(user('administrator'),'administrator'),true);
+console.log('Stage 4 role policy tests: PASS');

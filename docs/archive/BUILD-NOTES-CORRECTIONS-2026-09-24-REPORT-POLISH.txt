@@ -1,0 +1,13 @@
+ReportGen v2 report polish corrections
+
+- Improved Business Manager Executive Financial Summary layout in the browser.
+- Improved Sales Trend chart with gridlines, scale labels, day labels, legend, and hover values.
+- Added dailyTrend to Business Manager export payload.
+- Rebuilt Business Manager DOCX export with a professional cover block, report metadata, cleaner headings, structured executive summary, embedded sales trend chart, sales trend indicators, and cleaner section extraction.
+- Avoided duplicating section titles/descriptions inside the Word document.
+- Excel export was left unchanged because the user confirmed it is acceptable.
+
+Validation:
+- node --check passed for server/reports/reportsRoutes.js
+- node --check passed for public/js/pages/manager.js
+- Full npm test could not complete in this environment because the xlsx module is not installed in the working environment. Two other tests passed.

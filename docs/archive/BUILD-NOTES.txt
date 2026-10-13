@@ -1,0 +1,34 @@
+ReportGen v89 - Business Manager Pages
+
+Changes:
+- Business Manager Staff Management is read-only and shows staff directory only.
+- Business Manager Expenses shows month-filtered expenses for assigned businesses only.
+- Business Manager Payroll shows monthly payroll totals by assigned business and assigned total.
+- Business Manager pages hide salary details, deduction/loan actions, and payroll editing controls.
+- Added read-only /api/manager/expenses endpoint with server-side assigned-business filtering.
+- Full Financial Report from v88 retained.
+
+Validation:
+- Node syntax checks passed for changed JS files.
+- npm test remains blocked in this environment because dependencies are not installed (xlsx missing; npm ci timed out).
+- ZIP archive integrity verified after packaging.
+
+ReportGen v91 changes:
+- Business Manager report export to Word and native Excel XLSX
+- Optional report section selection before viewing, printing, or exporting
+- Selected sections are respected by Word and Excel export
+
+v92 SECURITY EXPORT VALIDATION (2026-09-23)
+- Added server-authoritative Manager export validation endpoint: POST /api/reports/export/manager/validate.
+- Validates reporting month, assigned business scope, one source row per selected business, and core financial values against SQLite records.
+- Validates sales, gross, returns, transactions, cost of goods, gross profit, expenses, payroll, total expenses, and net profit.
+- Manager Excel and Word export routes independently execute the same validation; calling the validation endpoint alone is not sufficient to bypass it.
+- Updated Manager frontend to send the selected month and source rows and to validate before requesting the export file.
+- JavaScript syntax checks passed.
+- Full runtime/integration tests require dependencies installed and a populated test database.
+
+
+2.0 backup policy:
+- Automatic monthly backup checks run hourly and cover servers started on the last day of a month.
+- Backups are retained globally at the four most recent verified .sqlite files, including manual and automatic backups.
+- This server package is not yet a Windows desktop installer; Electron packaging is a separate next phase.

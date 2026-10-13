@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ReportGen</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+  body { display: grid; place-items: center; color: #f8fafc; background: #071426;
+    font: 14px "Segoe UI", Arial, sans-serif; }
+  main { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; background: radial-gradient(ellipse at 50% 25%, #17385a 0, #0b1b30 52%, #071426 100%); }
+  img { width: 148px; height: 148px; object-fit: contain; filter: drop-shadow(0 12px 30px #0008); }
+  strong { margin-top: 17px; font-size: 22px; letter-spacing: .08em; }
+  span { margin-top: 7px; color: #a9bfd6; font-size: 12px; }
+  .track { width: 132px; height: 3px; margin-top: 24px; overflow: hidden; border-radius: 9px; background: #263c54; }
+  .track::after { content: ""; display: block; width: 45%; height: 100%; border-radius: inherit;
+    background: #54b7ff; animation: load 1.2s ease-in-out infinite alternate; }
+  @keyframes load { to { transform: translateX(125%); } }
+</style>
+</head>
+<body><main><img src="public/assets/reportgen-logo.png" alt="ReportGen"><strong>REPORTGEN</strong><span>Starting your workspace</span><div class="track"></div></main></body>
+</html>

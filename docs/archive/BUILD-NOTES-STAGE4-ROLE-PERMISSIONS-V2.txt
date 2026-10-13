@@ -1,0 +1,19 @@
+ReportGen Stage 4 — Role Permissions Runtime Fix
+Date: 2026-10-03
+
+Changes
+- Kept the role-permission API at /api/permissions/:role and preserved server-side authentication/role checks.
+- Added a backend build marker to /api/health: stage4-role-permissions-v2 and permissionsRoutes=true.
+- Updated the development HTTPS launcher to use the persistent reportgen-test-data database instead of recreating a disposable copy on every launch.
+- The development launcher now checks ports 4312/8080/8443 and stops only a previous ReportGen server process belonging to the same source tree; unrelated processes are not terminated.
+- Production ports 4310/80/443 and production data remain untouched.
+- Existing HTTPS certificate generation remains development-only.
+
+Verification
+- All JavaScript files passed node --check.
+- No database, private key, PFX, credential, or Git metadata is included in this ZIP.
+- The package was re-extracted and its JavaScript files were checked again before delivery.
+- The PowerShell launcher was manually syntax-reviewed; this Linux verification environment does not provide a PowerShell parser.
+
+Runtime note
+- After installing this package, start the supplied scripts/start-dev-lan-https.ps1 so the current Stage 4 backend owns port 8443. If another unrelated process already owns one of the development ports, the launcher stops and reports it rather than killing it.

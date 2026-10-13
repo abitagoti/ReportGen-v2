@@ -1,0 +1,30 @@
+# Generated Windows installers are release artifacts, not source files.
+/ReportGen-Setup-*.exe
+/release*/
+/.node-rename-check-*/
+/.reportgen-rename-check-*/
+
+# Dependencies are installed with `npm ci` from package-lock.json
+node_modules/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Local databases and database journals
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+
+# Private certificates and keys
+*.pfx
+*.p12
+*.key
+
+# Generated output
+dist/
+out/
+coverage/

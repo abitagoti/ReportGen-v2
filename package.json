@@ -1,0 +1,83 @@
+{
+  "name": "reportgen-server",
+  "version": "2.0.20",
+  "private": true,
+  "description": "ReportGen desktop application",
+  "author": "ReportGen",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "server": "node server/server.js",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit",
+    "start:desktop": "npx --no-install electron .",
+    "build:desktop": "npx --no-install electron-builder --win nsis",
+    "release:manifest": "node scripts/generate-release-manifest.js",
+    "release:verify": "node scripts/verify-release-integrity.js",
+    "prebuild:desktop": "node scripts/generate-release-manifest.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "13.0.3",
+    "docx": "^9.5.1",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "xlsx": "npm:@e965/xlsx@0.20.3",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.0",
+    "electron": "44.4.5",
+    "electron-builder": "^26.0.12",
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
+  },
+  "main": "electron-main.js",
+  "build": {
+    "appId": "com.reportgen.desktop",
+    "productName": "ReportGen",
+    "artifactName": "ReportGen-Setup-${version}.${ext}",
+    "asar": false,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "**/*",
+      "!release*/**",
+      "!.node-rename-check-*/**",
+      "!.reportgen-rename-check-*/**",
+      "!node_modules/.cache/**",
+      "!config/certificates/**",
+      "!tests/**",
+      "!*.md",
+      "!*.txt",
+      "!build/**",
+      "!docs/**"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "executableName": "ReportGen",
+      "icon": "public/assets/reportgen.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ReportGen",
+      "include": "build/installer.nsh",
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "allowScripts": {
+    "better-sqlite3@13.0.3": true,
+    "electron-winstaller@5.4.0": true
+  }
+}

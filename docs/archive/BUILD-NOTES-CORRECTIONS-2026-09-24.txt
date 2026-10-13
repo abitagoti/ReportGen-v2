@@ -1,0 +1,32 @@
+ReportGen v2 correction pass - 2026-09-24
+
+Included:
+1. Role-aware workspace labels in the sidebar, topbar, and dashboard hero.
+2. Dashboard hero wording no longer hardcodes Owner workspace.
+3. Global reporting period control changed from browser-native month input to a consistent select-based month selector for cross-browser rendering.
+4. Compose Message now opens in a modal overlay rather than inside the reader panel.
+5. Modal supports close button, cancel/discard, outside-click close, and existing send workflow.
+
+Validation:
+- JavaScript syntax checks passed for modified files.
+- Full npm test suite was not completed in this packaging environment because dependencies were not installed; the sales-import test reported missing xlsx module.
+
+Notes:
+- Employee/system-user linking for managers and other login holders is not automatically created in this pass. Payroll continues to use payroll employee records, avoiding automatic salary assumptions for login accounts.
+
+Messaging corrections added:
+- Removed the All messages mailbox option; Inbox, Unread, and Sent remain.
+- Compose now supports selecting multiple active recipients.
+- Backend creates one message record per selected recipient with validation and audit entries.
+- Added Reply action that opens the compose modal with recipient, Re: subject, and original message context prefilled.
+- Added Delete action for messages where the logged-in user is sender or recipient. Current behavior permanently removes the message for both participants.
+- Added DELETE /api/messages/:messageId route.
+
+Messaging and Business Manager corrections:
+- Added separate Delete for me and Delete for everyone behavior for internal messages.
+- Delete for me hides the message only from the current participant.
+- Delete for everyone is available to the sender and removes the message for all participants.
+- Added message deletion columns with startup migration for existing databases.
+- Business Managers can now access read-only staff list and payroll totals through payroll access guards.
+- Business Manager payroll responses are sanitized to totals only; employee-level payroll entries are blocked.
+- Business Manager staff responses do not expose base salary.

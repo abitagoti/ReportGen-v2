@@ -1,0 +1,21 @@
+ReportGen Payroll Corrections - Paid Lock and Detailed Print
+
+Implemented:
+- Added payroll payment_status and paid_at fields with guarded migration for existing databases.
+- Added POST /api/payroll/:id/paid endpoint.
+- Paid payroll records are locked against editing and deletion at the server layer.
+- Payroll list shows Paid state and Mark Paid action only for saved payroll.
+- Paid payroll detail view is read-only.
+- Print/Word/Excel HTML output now includes employee, gross, staff deductions, loan repayment, total deductions, and net columns.
+- Added guards preventing paid payroll from being regenerated or overwritten through manual monthly-total workflows.
+
+Validation:
+- Node syntax checks passed for modified server and frontend JavaScript files.
+- Full npm test/build was not run because node_modules is not included in the source archive.
+
+PAYROLL LIMITATIONS CLEARED - 2026-09-24
+- Manual payroll now stores staff-level gross, deduction, loan repayment, and net amounts.
+- Manual payroll requires the sum of staff gross amounts to equal the monthly payroll total.
+- Manual payroll rejects deductions and loan repayment amounts above gross pay.
+- Manual payroll detail API exposes staff-level manual entries for print/export and review.
+- Existing databases receive guarded migrations for the new manual staff amount columns.

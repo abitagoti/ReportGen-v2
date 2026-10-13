@@ -1,0 +1,14 @@
+ReportGen Stage 4 — Role Permissions Route Fix
+
+Fix:
+- Corrected GET /api/permissions/:role fall-through bug.
+- Reading another role now checks roles.manage directly with hasPermission().
+- A permitted request returns the role permissions JSON instead of calling next() into Express 404.
+- Users without roles.manage still receive HTTP 403.
+- Own-role reads remain available for workspace bootstrap.
+- Existing PUT role-permission protections are unchanged.
+
+Verification:
+- All JavaScript files passed node --check before packaging.
+- Package excludes node_modules, databases, certificates/private keys and Git metadata.
+- ZIP was integrity-tested and will be re-extracted and syntax-checked before delivery.

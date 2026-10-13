@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ReportGen - Server Connection</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111827; color: #e5e7eb;
+    font-family: -apple-system, Segoe UI, Arial, sans-serif; font-size: 13px; }
+  body { padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; }
+  h1 { font-size: 15px; margin: 0; color: #f9fafb; }
+  .option { border: 1px solid #374151; border-radius: 8px; padding: 12px; cursor: pointer; }
+  .option.selected { border-color: #60a5fa; background: #1f2937; }
+  .option label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+  .option .title { font-weight: 600; color: #f9fafb; }
+  .option .desc { color: #9ca3af; margin-top: 2px; }
+  input[type="text"] { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 7px 8px;
+    background: #0f172a; border: 1px solid #374151; border-radius: 6px; color: #e5e7eb; }
+  input[type="text"]:disabled { opacity: 0.5; }
+  .error { color: #f87171; min-height: 16px; }
+  .service-status { display:flex; align-items:center; justify-content:space-between; gap:12px; border:1px solid #374151; border-radius:8px; padding:10px 12px; color:#cbd5e1; }
+  .service-status strong { color:#86efac; }
+  .service-status strong.stopped { color:#fbbf24; }
+  .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: auto; }
+  button { padding: 7px 14px; border-radius: 6px; border: 1px solid #374151; background: #1f2937;
+    color: #e5e7eb; cursor: pointer; font-size: 13px; }
+  button.primary { background: #2563eb; border-color: #2563eb; color: white; }
+  button:disabled { opacity: 0.5; cursor: default; }
+</style>
+</head>
+<body>
+  <h1>ReportGen server connection</h1>
+
+  <div class="service-status"><span>Windows background service: <strong id="service-state">Checking…</strong></span><button id="refresh-service" type="button">Refresh</button></div>
+
+  <div class="option" id="option-local">
+    <label>
+      <input type="radio" name="mode" id="mode-local" value="local">
+      <span>
+        <div class="title">Run as local app</div>
+        <div class="desc">Starts and manages its own ReportGen server on this machine. Data stays on this computer.</div>
+      </span>
+    </label>
+  </div>
+
+  <div class="option" id="option-remote">
+    <label>
+      <input type="radio" name="mode" id="mode-remote" value="remote">
+      <span>
+        <div class="title">Connect to an existing ReportGen server</div>
+        <div class="desc">Use this if ReportGen is already running elsewhere on your network (e.g. as a background service on another machine). This app becomes a client only.</div>
+      </span>
+    </label>
+    <input type="text" id="server-url" placeholder="http://reportgen.local  or  http://192.168.1.20" disabled>
+  </div>
+
+  <div class="error" id="error"></div>
+
+  <div class="buttons">
+    <button id="cancel">Cancel</button>
+    <button id="save" class="primary">Save &amp; Restart</button>
+  </div>
+
+<script>
+  const localOption = document.getElementById('option-local');
+  const remoteOption = document.getElementById('option-remote');
+  const modeLocal = document.getElementById('mode-local');
+  const modeRemote = document.getElementById('mode-remote');
+  const urlInput = document.getElementById('server-url');
+  const errorEl = document.getElementById('error');
+
+  async function refreshServiceStatus() {
+    const stateEl = document.getElementById('service-state');
+    stateEl.textContent = 'Checking…';
+    stateEl.classList.remove('stopped');
+    try {
+      const { state } = await window.reportgenConnection.getServiceStatus();
+      const labels = { running: 'Running', stopped: 'Stopped', start_pending: 'Starting', stop_pending: 'Stopping', missing: 'Not installed', unsupported: 'Unavailable on this computer', unknown: 'Status unavailable' };
+      stateEl.textContent = labels[state] || 'Status unavailable';
+      stateEl.classList.toggle('stopped', state !== 'running');
+    } catch { stateEl.textContent = 'Status unavailable'; stateEl.classList.add('stopped'); }
+  }
+  document.getElementById('refresh-service').addEventListener('click', refreshServiceStatus);
+  refreshServiceStatus();
+
+  function refresh() {
+    const remote = modeRemote.checked;
+    localOption.classList.toggle('selected', !remote);
+    remoteOption.classList.toggle('selected', remote);
+    urlInput.disabled = !remote;
+  }
+  modeLocal.addEventListener('change', refresh);
+  modeRemote.addEventListener('change', refresh);
+  localOption.addEventListener('click', () => { modeLocal.checked = true; refresh(); });
+  remoteOption.addEventListener('click', () => { modeRemote.checked = true; refresh(); });
+
+  (async () => {
+    const current = await window.reportgenConnection.get();
+    if (current.mode === 'remote') {
+      modeRemote.checked = true;
+      urlInput.value = current.serverUrl || '';
+    } else {
+      modeLocal.checked = true;
+    }
+    refresh();
+  })();
+
+  document.getElementById('cancel').addEventListener('click', () => window.reportgenConnection.cancel());
+
+  document.getElementById('save').addEventListener('click', async () => {
+    errorEl.textContent = '';
+    const mode = modeRemote.checked ? 'remote' : 'local';
+    let serverUrl = urlInput.value.trim();
+    if (mode === 'remote') {
+      if (!serverUrl) { errorEl.textContent = 'Enter the address of the ReportGen server.'; return; }
+      if (!/^https?:\/\//i.test(serverUrl)) serverUrl = 'http://' + serverUrl;
+      try { new URL(serverUrl); } catch { errorEl.textContent = 'That does not look like a valid address.'; return; }
+    }
+    const result = await window.reportgenConnection.saveAndRestart({ mode, serverUrl });
+    if (result && result.error) errorEl.textContent = result.error;
+  });
+</script>
+</body>
+</html>

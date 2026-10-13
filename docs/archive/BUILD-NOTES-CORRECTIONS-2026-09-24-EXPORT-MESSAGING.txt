@@ -1,0 +1,18 @@
+ReportGen correction build — 2026-09-24
+
+Implemented:
+- Replaced consolidated Word HTML/.doc export with a genuine .docx export using the docx package.
+- Added an embedded SVG business sales contribution chart to the Word document.
+- Added dedicated Excel worksheets for each business and each monthly detail section, plus print setup and navigable sheets.
+- Updated the browser export fallback filename from .doc to .docx.
+- Changed the Messages page so folder selection displays the list first and no message opens automatically.
+- Clicking a message opens a full-screen reader modal.
+- Added close and outside-click behavior for the message reader modal.
+- Preserved reply, delete-for-me, and delete-for-everyone actions inside the message modal.
+
+Installation:
+- Run npm install so the new docx dependency is installed.
+- Then run npm run build:desktop.
+
+Note:
+- The package-lock file may be refreshed by npm install because the environment could not complete package-lock-only resolution during packaging.

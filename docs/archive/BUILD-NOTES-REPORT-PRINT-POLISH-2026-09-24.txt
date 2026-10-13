@@ -1,0 +1,14 @@
+ReportGen Print View Refinement – 2026-09-24
+
+Implemented:
+- Removed currency icons from percentage and count KPI metrics in the Business Manager report.
+- Added compact print-friendly empty states instead of oversized dashboard empty boxes.
+- Added a current-month data notice when no sales activity is recorded.
+- Prevented misleading comparison deltas from showing as -100% when current-month data is absent.
+- Updated management commentary to distinguish missing/no recorded current activity from a genuine decrease.
+- Improved printed table alignment, column sizing, wrapping, and the assigned-business contribution table.
+- Added print-specific styling for summary metrics, notices, empty states, and tables.
+
+Validation:
+- JavaScript syntax checks passed for manager.js, reports.js, and payroll.js.
+- This is a static code validation; live browser rendering and database integration testing should still be performed.

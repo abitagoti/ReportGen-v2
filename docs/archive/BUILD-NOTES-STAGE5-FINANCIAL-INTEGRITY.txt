@@ -1,0 +1,56 @@
+ReportGen Stage 5 — Financial & Report Integrity
+Date: 2026-10-03
+
+Purpose
+-------
+Make financial report calculations authoritative on the server so browser-supplied
+financial totals cannot be used to generate Owner/Admin reports or exports.
+
+Changes
+-------
+1. Added POST /api/reports/owner-data.
+   - Server calculates the selected reporting range directly from the company DB.
+   - Frontend report preview now consumes this authoritative payload.
+   - Selected business is validated against the authenticated company.
+
+2. Owner/Admin Word and Excel exports now call the same server-side calculation
+   engine instead of trusting rows/totals supplied by the browser.
+
+3. Server-side calculation covers:
+   - sales, gross sales and returns
+   - cost of goods and gross profit
+   - operating expenses
+   - payroll
+   - purchases/capital
+   - vendor payments
+   - owner expense allocation, including monthly defaults, business overrides
+     and exclusions
+   - transactions and distinct sales days
+   - estimated net profit
+   - business and monthly contribution data
+   - expense details and owner allocation details
+
+4. Added audit entries for vendor payment create/update/delete and owner allocation
+   default/adjustment/update/reset mutations.
+
+5. Spreadsheet import dependency security is preserved in package.json by replacing
+   the vulnerable xlsx 0.18.5 dependency with the npm alias @e965/xlsx 0.20.3.
+   package-lock.json was removed deliberately because it still described 0.18.5;
+   npm install must regenerate a fresh lockfile before packaging/deployment.
+
+Important
+---------
+The Business Manager export validation remains server-side and continues to verify
+its submitted source rows against authoritative DB values. Full conversion of all
+Business Manager rich HTML sections to server-rendered financial sections remains
+separate work; Stage 5 owner/admin preview + Word/Excel export are fully sourced
+from the server calculation engine.
+
+Verification
+------------
+- 75/75 JavaScript files passed node --check.
+- package.json parsed successfully.
+- No node_modules included in the deliverable.
+- No database files included.
+- No certificates/private keys included.
+- Final ZIP is re-extracted and all JavaScript files are checked again before delivery.
