@@ -28,3 +28,6 @@ node_modules/
 dist/
 out/
 coverage/
+
+# Allow the test-only TLS fixture key
+!tests/fixtures/tls-test-only.key
