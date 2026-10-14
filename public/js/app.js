@@ -21,6 +21,8 @@ import {messagesPage,bindMessages} from './pages/messages.js';
 import {auditPage,bindAudit} from './pages/audit.js';
 import {vendorPaymentsPage,bindVendorPayments} from './pages/vendorPayments.js';
 import {openAccountSecurity} from './pages/account.js';
+import {sharedExpensesPage,bindSharedExpenses,externalBusinessesPage,bindExternalBusinesses,ownerSharedExpensesPage,bindOwnerSharedExpenses,ownerExternalBusinessesPage,bindOwnerExternalBusinesses} from './pages/accountantSharedExpenses.js';
+import {generalCompanyReportPage,bindGeneralCompanyReport} from './pages/generalCompanyReport.js';
 
 const app=$('#app');
 const foundationPages={purchases:'Purchases',payroll:'Payroll',analytics:'Analytics',comparison:'Company Comparison'};
@@ -55,16 +57,21 @@ async function boot(){
 }
 
 function render(){
-  const pagePermission={dashboard:'dashboard.view',businesses:'businesses.view','vendor-payments':'vendor_payments.view',sales:'sales.view',history:'history.view',expenses:'expenses.view',purchases:'capital.view',analytics:'comparison.view',comparison:'comparison.view',reports:'reports.view',payroll:'payroll.view',deductions:'payroll.deductions',staff:'staff.view',users:'users.manage',settings:'settings.manage',messages:'messages.send',audit:'audit.view'};
+  const pagePermission={'general-company-report':'dashboard.view','shared-expenses':'shared_expenses.view','external-businesses':'external_businesses.view',dashboard:'dashboard.view',businesses:'businesses.view','vendor-payments':'vendor_payments.view',sales:'sales.view',history:'history.view',expenses:'expenses.view',purchases:'capital.view',analytics:'comparison.view',comparison:'comparison.view',reports:'reports.view',payroll:'payroll.view',deductions:'payroll.deductions',staff:'staff.view',users:'users.manage',settings:'settings.manage',messages:'messages.send',audit:'audit.view'};
   if(pagePermission[state.page] && !can(pagePermission[state.page])) state.page='dashboard';
   applyTheme();
   let html='';
   if(state.page==='dashboard')html=isAccountant()?accountantDashboard():dashboard();
+  else if(state.page==='general-company-report' && normalizedRole(state.user?.role)==='owner')html=generalCompanyReportPage();
   else if(state.page==='businesses')html=isAccountant()?accountantBusinesses():businesses();
   else if(state.page==='sales')html=sales();
   else if(state.page==='history')html=historyPage();
   else if(state.page==='accountant-business' && isAccountant())html=accountantBusinessPage();
   else if(state.page==='expenses' && isAccountant())html=accountantExpensesPage();
+  else if(state.page==='shared-expenses' && isAccountant())html=sharedExpensesPage();
+  else if(state.page==='shared-expenses')html=ownerSharedExpensesPage();
+  else if(state.page==='external-businesses' && isAccountant())html=externalBusinessesPage();
+  else if(state.page==='external-businesses')html=ownerExternalBusinessesPage();
   else if(state.page==='expenses' && isLimitedRole())html=managerExpensesPage();
   else if(state.page==='expenses')html=ownerExpensesPage();
   else if(state.page==='accountant-reporting' && isAccountant())html=accountantReportingPage();
@@ -88,6 +95,7 @@ function render(){
   else html=dashboard();
   app.innerHTML=html;
   bindGlobal();
+  if(state.page==='general-company-report' && normalizedRole(state.user?.role)==='owner')void bindGeneralCompanyReport();
   if(state.page==='dashboard' && isAccountant())bindAccountantDashboard();
   if(state.page==='dashboard' && !isAccountant())bindDashboard();
   if(state.page==='businesses' && isAccountant())bindAccountant();
@@ -99,6 +107,10 @@ function render(){
   if(state.page==='history')bindHistory();
   if(state.page==='accountant-business' && isAccountant())bindAccountantBusiness();
   if(state.page==='expenses' && isAccountant())bindAccountantExpenses();
+  if(state.page==='shared-expenses' && isAccountant())bindSharedExpenses();
+  else if(state.page==='shared-expenses')void bindOwnerSharedExpenses();
+  if(state.page==='external-businesses' && isAccountant())bindExternalBusinesses();
+  else if(state.page==='external-businesses')void bindOwnerExternalBusinesses();
   if(state.page==='expenses' && isLimitedRole())bindManagerExpenses();
   else if(state.page==='expenses' && !isAccountant())bindOwnerExpenses();
   if(state.page==='accountant-reporting' && isAccountant())bindAccountantReporting();
@@ -126,6 +138,9 @@ function bindGlobal(){
     const nextPage=b.dataset.page;
     if(!nextPage || nextPage===state.page)return;
     await runWithLoading(`Opening ${String(b.textContent||nextPage).trim()}…`,async()=>{
+      // Keep navigation inside ReportGen in the browser history so the phone's
+      // Back gesture/button returns to the previous app page, not the tab/site.
+      history.pushState({reportgenPage:nextPage},'',location.href);
       state.page=nextPage;
       render();
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
@@ -174,6 +189,18 @@ function bindGlobal(){
   backdrop?.addEventListener('click',closeNav);
   $$('[data-page]').forEach(b=>b.addEventListener('click',closeNav));
 }
+
+// Seed the current app page in browser history and handle Android/iOS browser
+// back navigation as an in-app page transition.
+if(!history.state?.reportgenPage){
+  history.replaceState({...history.state,reportgenPage:state.page||'dashboard',reportgenRoot:true},'',location.href);
+}
+window.addEventListener('popstate',event=>{
+  const target=event.state?.reportgenPage;
+  if(!target || target===state.page)return;
+  state.page=target;
+  render();
+});
 
 window.ReportGen={state,render};
 boot();

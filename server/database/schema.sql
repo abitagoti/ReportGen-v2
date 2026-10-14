@@ -136,6 +136,87 @@ CREATE TABLE IF NOT EXISTS accountant_expense_templates (
 );
 CREATE INDEX IF NOT EXISTS idx_accountant_expense_templates_company ON accountant_expense_templates(company_id, is_active);
 
+-- Shared expense allocation and accountant-managed external businesses.
+CREATE TABLE IF NOT EXISTS external_businesses (
+  id TEXT PRIMARY KEY,
+  company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  is_active INTEGER NOT NULL DEFAULT 1,
+  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(company_id, name)
+);
+CREATE INDEX IF NOT EXISTS idx_external_businesses_company_active ON external_businesses(company_id,is_active,name);
+CREATE TABLE IF NOT EXISTS shared_expense_templates (
+  id TEXT PRIMARY KEY,
+  company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  is_active INTEGER NOT NULL DEFAULT 1,
+  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(company_id,name)
+);
+CREATE TABLE IF NOT EXISTS shared_expense_template_lines (
+  id TEXT PRIMARY KEY,
+  template_id TEXT NOT NULL REFERENCES shared_expense_templates(id) ON DELETE CASCADE,
+  business_type TEXT NOT NULL CHECK(business_type IN ('linked','external')),
+  business_id TEXT NOT NULL,
+  percentage REAL NOT NULL CHECK(percentage >= 0 AND percentage <= 100),
+  created_at TEXT NOT NULL,
+  UNIQUE(template_id,business_type,business_id)
+);
+CREATE INDEX IF NOT EXISTS idx_shared_template_lines_template ON shared_expense_template_lines(template_id);
+CREATE TABLE IF NOT EXISTS shared_expenses (
+  id TEXT PRIMARY KEY,
+  company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  template_id TEXT REFERENCES shared_expense_templates(id) ON DELETE SET NULL,
+  template_name TEXT NOT NULL,
+  expense_date TEXT NOT NULL,
+  expense_period TEXT NOT NULL,
+  total_amount REAL NOT NULL CHECK(total_amount > 0),
+  reference TEXT,
+  notes TEXT,
+  status TEXT NOT NULL DEFAULT 'posted' CHECK(status IN ('posted','cancelled')),
+  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_shared_expenses_company_period ON shared_expenses(company_id,expense_period,status);
+CREATE TABLE IF NOT EXISTS shared_expense_lines (
+  id TEXT PRIMARY KEY,
+  shared_expense_id TEXT NOT NULL REFERENCES shared_expenses(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  business_type TEXT NOT NULL CHECK(business_type IN ('linked','external')),
+  business_id TEXT NOT NULL,
+  business_name TEXT NOT NULL,
+  percentage REAL NOT NULL,
+  amount REAL NOT NULL CHECK(amount >= 0),
+  accountant_expense_id TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_shared_expense_lines_parent ON shared_expense_lines(shared_expense_id);
+CREATE INDEX IF NOT EXISTS idx_shared_expense_lines_business ON shared_expense_lines(company_id,business_type,business_id);
+CREATE TABLE IF NOT EXISTS external_business_transactions (
+  id TEXT PRIMARY KEY,
+  company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  external_business_id TEXT NOT NULL REFERENCES external_businesses(id) ON DELETE RESTRICT,
+  transaction_date TEXT NOT NULL,
+  transaction_type TEXT NOT NULL CHECK(transaction_type IN ('earning','expense')),
+  category TEXT NOT NULL,
+  description TEXT NOT NULL,
+  amount REAL NOT NULL CHECK(amount > 0),
+  notes TEXT,
+  shared_expense_line_id TEXT,
+  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_external_transactions_business_date ON external_business_transactions(company_id,external_business_id,transaction_date);
+
+
 CREATE TABLE IF NOT EXISTS accountant_remittances (
   id TEXT PRIMARY KEY,
   company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,

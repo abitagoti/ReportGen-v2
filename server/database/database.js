@@ -302,6 +302,13 @@ function migrate() {
   const schema = fs.readFileSync(schemaPath, 'utf8');
   db.exec(schema);
 
+  // Shared allocations post linked-business shares into the existing expense ledger.
+  // These nullable provenance columns preserve legacy expense rows unchanged.
+  const accountantExpenseColumns = db.prepare('PRAGMA table_info(accountant_expenses)').all().map(x => x.name);
+  if (!accountantExpenseColumns.includes('shared_expense_id')) db.exec('ALTER TABLE accountant_expenses ADD COLUMN shared_expense_id TEXT');
+  if (!accountantExpenseColumns.includes('shared_expense_line_id')) db.exec('ALTER TABLE accountant_expenses ADD COLUMN shared_expense_line_id TEXT');
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_accountant_expenses_shared_line ON accountant_expenses(shared_expense_line_id) WHERE shared_expense_line_id IS NOT NULL;`);
+
   // Request-level idempotency records protect retryable financial mutations from
   // double-clicks and network retries without imposing business-level uniqueness
   // on legitimate repeated transactions. Records are scoped to company, user and

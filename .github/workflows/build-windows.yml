@@ -1,0 +1,51 @@
+name: Build Windows Installer
+
+# Runs on every push to main, on pull requests, and can also be triggered
+# manually from the Actions tab in GitHub ("Run workflow" button).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Gate the installer on the full suite (including the database-backed
+      # suites that need node_modules). A failing test must stop the build.
+      - name: Run test suite
+        run: npm test
+
+      - name: Verify release integrity manifest
+        run: npm run release:manifest && npm run release:verify
+
+      # electron-builder calls @electron/rebuild itself during packaging.
+      - name: Build Windows installer (NSIS)
+        run: npx --no-install electron-builder --win nsis --config.directories.output=release
+        env:
+          # Uncomment and set a repo secret if you later add code signing:
+          # CSC_LINK: ${{ secrets.WINDOWS_CERT_BASE64 }}
+          # CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ReportGen-Windows-Installer
+          path: release/*.exe
+          if-no-files-found: error

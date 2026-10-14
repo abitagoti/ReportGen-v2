@@ -24,7 +24,7 @@ function matrix(){
 }
 function detailTable(list){
   if(!list.length)return '<div class="empty">No expenses recorded for this business in the selected month.</div>';
-  return `<div class="table-wrap owner-expenses-table-wrap"><table class="owner-expenses-table"><thead><tr><th>Date</th><th>Expense item</th><th>Notes</th><th>Amount</th><th>Recorded</th></tr></thead><tbody>${list.map(row=>`<tr><td>${esc(row.expenseDate)}</td><td>${esc(expenseItem(row))}</td><td>${esc(row.notes||'—')}</td><td><strong>${money(row.amount)}</strong></td><td><span class="pill success">Recorded</span><div class="small">${esc(row.createdAt||'—')}</div></td></tr>`).join('')}</tbody></table></div>`;
+  return `<div class="table-wrap owner-expenses-table-wrap"><table class="owner-expenses-table"><thead><tr><th>Date</th><th>Expense item</th><th>Notes</th><th>Amount</th><th>Recorded</th></tr></thead><tbody>${list.map(row=>`<tr><td>${esc(row.expenseDate)}</td><td>${esc(expenseItem(row))}${row.sharedExpenseId?' <span class="pill success">Shared allocation</span>':''}</td><td>${esc(row.notes||'—')}</td><td><strong>${money(row.amount)}</strong></td><td><span class="pill success">Recorded</span><div class="small">${esc(row.createdAt||'—')}</div></td></tr>`).join('')}</tbody></table></div>`;
 }
 function cards(){
   const bs=businesses();

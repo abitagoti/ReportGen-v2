@@ -932,3 +932,23 @@ body.modal-open{overflow:hidden}
 .vendor-payments-table td:nth-child(4){white-space:normal;min-width:220px}
 @media(max-width:980px){.dashboard-financial-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.owner-allocation-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.dashboard-financial-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.owner-default-card,.owner-selected-card{display:block}.owner-inline-form{margin-top:14px}.vendor-payments-table th,.vendor-payments-table td{white-space:normal}}
+
+/* General Company Report: this page's long report content needs a viewport-fixed desktop sidebar.
+   Scope it to the report page so all other page layouts and mobile navigation remain unchanged. */
+@media (min-width: 761px) {
+  .shell:has(#gcr-open-businesses) > .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--sidebar);
+    height: 100vh;
+    overflow-y: auto;
+    align-self: auto;
+    z-index: 30;
+  }
+  .shell:has(#gcr-open-businesses) > .main {
+    min-width: 0;
+    grid-column: 2;
+  }
+}

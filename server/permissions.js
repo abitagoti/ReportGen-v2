@@ -8,7 +8,7 @@ const PERMISSIONS = [
   ['capital.view','Purchases'],['capital.manage','Manage purchases'],['vendor_payments.view','Vendor payments'],['vendor_payments.manage','Manage vendor payments'],['analytics.view','Analytics'],['comparison.view','Company comparison'],
   ['reports.view','Reports'],['audit.view','Audit log'],['messages.send','Send internal messages'],['payroll.view','View payroll'],['payroll.salaries','View salaries and per-employee pay'],['payroll.create','Create payroll'],['payroll.edit','Edit payroll'],
   ['payroll.finalize','Finalize payroll'],['payroll.deductions','Manage deductions'],['payroll.loans','Manage loans'],
-  ['staff.view','View staff'],['staff.manage','Manage staff'],['users.manage','Manage users'],['roles.manage','Manage roles'],['settings.manage','Manage settings']
+  ['staff.view','View staff'],['staff.manage','Manage staff'],['shared_expenses.view','View shared expenses and allocation history'],['external_businesses.view','View external business pages and financial records'],['users.manage','Manage users'],['roles.manage','Manage roles'],['settings.manage','Manage settings']
 ];
 const ALL = PERMISSIONS.map(x=>x[0]);
 const DEFAULTS = {
@@ -16,7 +16,7 @@ const DEFAULTS = {
   admin: ALL,
   owner: ALL,
   general_manager: ALL.filter(x=>x!=='payroll.loans'),
-  accountant: ['dashboard.view','businesses.view','expenses.view','expenses.manage','payroll.view','payroll.salaries','payroll.create','payroll.deductions','capital.view','reports.view','audit.view','messages.send'],
+  accountant: ['dashboard.view','businesses.view','expenses.view','expenses.manage','shared_expenses.view','external_businesses.view','payroll.view','payroll.salaries','payroll.create','payroll.deductions','capital.view','reports.view','audit.view','messages.send'],
   business_manager: ['dashboard.view','businesses.view','sales.view','sales.import','history.view','expenses.view','analytics.view','reports.view','payroll.view','staff.view','messages.send'],
   viewer: ['dashboard.view','businesses.view','reports.view']
 };

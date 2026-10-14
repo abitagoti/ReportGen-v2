@@ -2,13 +2,13 @@
   "format": 1,
   "product": "ReportGen",
   "version": "2.0.20",
-  "generatedAt": "2026-10-11T17:52:48.980Z",
+  "generatedAt": "2026-10-14T14:44:02.797Z",
   "files": {
     "package.json": "ae33f6c53ecf3b5ba422d5c7a2472cb4e948fe1e4b5bd8955bf8b68e196dd6e9",
     "electron-main.js": "de32cb822a3513bd3746bcbad773d89b7db8de02b10be73a2345e99e67dce2af",
     "server/server.js": "00fab9f123db001ac9a9ddcb23072fe5934374a1fa434a6c3cf0aa18e500dfd7",
     "server/config.js": "2faee2ebf8687170d4c96bb066bae64ac6a2a5e39e9e329000a61fba904eeff2",
-    "server/database/database.js": "886f0dfdae22584cbdba82ecdef071d9dd61804693b9cb8a391f552066425cad",
+    "server/database/database.js": "ee933ccbfd4b01f18dc1d6330a48f8b58469aea016308d5bf927de92ea583f6a",
     "server/security/logger.js": "b4a96e02f9d131d81450f89323f4474f6e1786efa6baae9031a39304a03c298a",
     "server/security/resourceProtection.js": "23b41355070832c74d466092ed2e666b3d0ba977677d569ac5269ef0c26223b3"
   }

@@ -121,3 +121,51 @@ body:has(.modal-backdrop){overflow:hidden}
 /* Native date/month pickers follow the theme (the calendar icon was dark-on-dark) */
 :root{color-scheme:dark}
 :root[data-theme=light]{color-scheme:light}
+
+
+/* v57: mobile navigation keeps Sign out anchored while the menu list scrolls. */
+@media (max-width:850px){
+  .sidebar{
+    display:flex;flex-direction:column;
+    height:100vh;height:100dvh;
+    min-height:0;
+    overflow:hidden;
+    padding-bottom:calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  .sidebar-scroll{
+    flex:1 1 auto;min-height:0;
+    overflow-y:auto;overflow-x:hidden;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    justify-content:flex-start;
+    padding-bottom:12px;
+  }
+  .sidebar-bottom{
+    flex:0 0 auto;margin-top:auto;
+    padding-top:8px;
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+    background:linear-gradient(180deg, transparent, var(--panel3) 18%);
+  }
+  .sidebar-bottom > #logout{
+    display:flex;align-items:center;justify-content:center;
+    width:100%;min-height:44px;margin-top:6px!important;
+  }
+}
+
+/* v58: desktop navigation stays pinned while the workspace content scrolls. */
+@media (min-width:851px){
+  .shell{align-items:start;}
+  .sidebar{
+    position:sticky;top:0;align-self:start;
+    height:100vh;height:100dvh;min-height:0;
+    overflow:hidden;box-sizing:border-box;
+  }
+  .sidebar-scroll{
+    flex:1 1 auto;min-height:0;
+    overflow-y:auto;overflow-x:hidden;
+    overscroll-behavior:contain;
+    scrollbar-width:thin;
+    padding-bottom:12px;
+  }
+  .sidebar-bottom{flex:0 0 auto;margin-top:auto;}
+}
