@@ -11,7 +11,6 @@ router.get('/api/messages/recipients', requireAuth, requirePermission('messages.
   const users=db.prepare(`SELECT id,display_name AS displayName,username,role FROM users WHERE company_id=? AND is_active=1 AND id<>? ORDER BY display_name COLLATE NOCASE, username COLLATE NOCASE`).all(req.user.company_id,req.user.user_id);
   res.json({users});
 });
-const oversightRoles = ['owner','general_manager','administrator','admin'];
 const schema = z.object({ recipientUserIds: z.array(z.string().min(1)).min(1).max(100), businessId: z.string().nullable().optional(), subject: z.string().trim().min(2).max(160), body: z.string().trim().min(1).max(10000) });
 router.get('/api/messages', requireAuth, (req,res)=>{
   const rows=db.prepare(`SELECT m.id,m.business_id AS businessId,b.name AS businessName,m.sender_user_id AS senderUserId,s.display_name AS senderName,m.recipient_user_id AS recipientUserId,r.display_name AS recipientName,m.subject,m.body,m.status,m.created_at AS createdAt,m.read_at AS readAt FROM internal_messages m JOIN users s ON s.id=m.sender_user_id JOIN users r ON r.id=m.recipient_user_id LEFT JOIN businesses b ON b.id=m.business_id WHERE m.company_id=? AND (m.sender_user_id=? OR m.recipient_user_id=?) AND (m.sender_user_id!=? OR m.deleted_by_sender_at IS NULL) AND (m.recipient_user_id!=? OR m.deleted_by_recipient_at IS NULL) ORDER BY m.created_at DESC`).all(req.user.company_id,req.user.user_id,req.user.user_id,req.user.user_id,req.user.user_id);

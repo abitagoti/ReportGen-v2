@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict');
-const {isAdministrator,roleLevel,canManageTargetRole,canEditRole}=require('./rolePolicy');
+const {isAdministrator,roleLevel,canManageTargetRole,canEditRole,canOverrideTarget}=require('./rolePolicy');
 const user=(role)=>({role});
 assert.equal(isAdministrator(user('administrator')),true);
 assert.equal(isAdministrator(user('owner')),false);
@@ -15,4 +15,14 @@ assert.equal(canManageTargetRole(user('general_manager'),'business_manager'),tru
 assert.equal(canManageTargetRole(user('owner'),'owner'),true);
 assert.equal(canManageTargetRole(user('owner'),'administrator'),false);
 assert.equal(canManageTargetRole(user('administrator'),'administrator'),true);
+// Individual permission overrides: strictly-lower accounts only, never peers or administrators.
+assert.equal(canOverrideTarget(user('owner'),'general_manager'),true);
+assert.equal(canOverrideTarget(user('owner'),'owner'),false);
+assert.equal(canOverrideTarget(user('general_manager'),'general_manager'),false);
+assert.equal(canOverrideTarget(user('general_manager'),'owner'),false);
+assert.equal(canOverrideTarget(user('general_manager'),'viewer'),true);
+assert.equal(canOverrideTarget(user('owner'),'administrator'),false);
+assert.equal(canOverrideTarget(user('administrator'),'administrator'),false);
+assert.equal(canOverrideTarget(user('administrator'),'owner'),true);
+assert.equal(canOverrideTarget(user('viewer'),'viewer'),false);
 console.log('Stage 4 role policy tests: PASS');

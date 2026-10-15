@@ -31,7 +31,6 @@ function bindImportStep(){
   const input=document.getElementById('salesFile');
   input?.addEventListener('change',()=>{file=input.files?.[0]||null;if(file)document.getElementById('fileName').textContent=file.name});
 }
-export function bindInitial(){const drop=document.getElementById('fileDrop');if(drop){drop.onclick=()=>document.getElementById('salesFile').click();drop.ondragover=e=>{e.preventDefault();drop.style.borderColor='var(--gold)'};drop.ondragleave=()=>drop.style.borderColor='var(--line2)';drop.ondrop=e=>{e.preventDefault();file=e.dataTransfer.files?.[0]||null;renderFileName()}}document.getElementById('salesFile')?.addEventListener('change',e=>{file=e.target.files?.[0]||null;renderFileName()})}
 function renderFileName(){const n=document.getElementById('fileName');if(n)n.textContent=file?file.name:'No file selected';const b=document.getElementById('inspectFile');if(b)b.disabled=!file}
 async function inspect(sheetName){
   if(step===1&&!document.getElementById('salesBusiness')?.value)return toast('Select a business first.');

@@ -41,7 +41,6 @@ function reconcilePayrollPayments(companyId, payrollId, stamp){
 }
 
 const managementRoles = ['owner','general_manager','administrator','admin'];
-const readOnlyManagementRoles = ['business_manager'];
 const accountantRole = 'accountant';
 const roleOf = req => String(req.user.role || '').toLowerCase();
 const isManagement = req => managementRoles.includes(roleOf(req));
@@ -62,7 +61,6 @@ function validMonthStrict(v){ return /^(?:19|20)\d{2}-(?:0[1-9]|1[0-2])$/.test(S
 function requireAccess(req,res){ if(!hasPermission(req,'payroll.view')) {res.status(403).json({error:'You do not have access to payroll.'});return false;} return true; }
 function requireAnyPerm(req,res,permissions){ if(!permissions.some(p=>hasPermission(req,p))){res.status(403).json({error:'You do not have permission for this action.'});return false;} return true; }
 function requirePerm(req,res,permission){ if(!hasPermission(req,permission)){res.status(403).json({error:'You do not have permission for this action.'});return false;} return true; }
-function requireManagement(req,res){ if(!isManagement(req)){res.status(403).json({error:'Only the Owner, General Manager or Administrator can perform this action.'});return false;} return true; }
 function loanBalance(loan){
   const repaid = Number(db.prepare("SELECT COALESCE(SUM(amount),0) AS total FROM payroll_loan_repayments WHERE loan_id=? AND status='posted'").get(loan.id)?.total || 0);
   return Math.max(0, Number(loan.principalAmount || loan.principal_amount || 0) - repaid);
@@ -152,7 +150,7 @@ router.get('/api/payroll/staff', requireAuth, (req,res)=>{
 });
 
 router.post('/api/payroll/staff', requireAuth, requireIdempotency, (req,res)=>{
-  if(!requirePerm(req,res,'staff.manage'))return; const {businessId,employeeName,employeeCode,roleTitle,department,baseSalary,roleId,departmentId,linkedUserId}=req.body||{};
+  if(!requirePerm(req,res,'staff.manage'))return; const {businessId,employeeName,roleTitle,department,baseSalary,roleId,departmentId,linkedUserId}=req.body||{};
   if(!businessId||!canUseBusiness(req,businessId)||!String(employeeName||'').trim())return res.status(400).json({error:'Business and staff name are required.'});
   if(departmentId && !db.prepare('SELECT id FROM organization_departments WHERE id=? AND company_id=? AND is_active=1').get(departmentId,req.user.company_id))return res.status(400).json({error:'Selected department is invalid.'});
   if(roleId && !db.prepare('SELECT id FROM organization_job_roles WHERE id=? AND company_id=? AND is_active=1').get(roleId,req.user.company_id))return res.status(400).json({error:'Selected job role is invalid.'});
@@ -234,7 +232,7 @@ router.patch('/api/payroll/staff/:id/status', requireAuth, (req,res)=>{
 });
 
 router.post('/api/payroll/monthly-total', requireAuth, requireIdempotency, (req,res)=>{
-  if(!isAccountant(req) && !requirePerm(req,res,'payroll.create'))return;
+  if(!requirePerm(req,res,'payroll.create'))return;
   const {businessId,payrollMonth,amount,note,staffAdjustments=[]}=req.body||{};
   if(!businessId||!canUseBusiness(req,businessId))return res.status(403).json({error:'You are not assigned to this business.'});
   if(!validMonthStrict(payrollMonth))return res.status(400).json({error:'A valid payroll month is required.'});
@@ -253,7 +251,7 @@ router.post('/api/payroll/monthly-total', requireAuth, requireIdempotency, (req,
   if(staffAdjustments.length && Math.abs(staffGrossTotal-numericAmount)>0.005)return res.status(400).json({error:'The sum of staff gross amounts must equal the monthly payroll total.'});
   const existing=db.prepare('SELECT id,calculation_mode AS calculationMode,payment_status AS paymentStatus FROM payroll_monthly_totals WHERE company_id=? AND business_id=? AND payroll_month=?').get(req.user.company_id,businessId,payrollMonth);
   if(existing && existing.paymentStatus==='paid') return res.status(409).json({error:'Paid payroll is locked.'});
-  if(existing && isAccountant(req)) return res.status(409).json({error:'Payroll already exists for this business and month. The Accountant cannot override it.'});
+  if(existing && !hasPermission(req,'payroll.edit')) return res.status(403).json({error:'You do not have permission to edit existing payroll records.'});
   if(existing && existing.calculationMode==='employees')return res.status(409).json({error:'Employee-level payroll is locked for this month.'});
   const stamp=nowIso(),pid=existing?.id||id('pay');
   const tx=db.transaction(()=>{

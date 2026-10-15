@@ -36,7 +36,7 @@ test('shared expense create/edit/cancel and template create/edit/archive handler
 });
 
 test('external transaction and shared expense APIs enforce accountant permissions for mutations', () => {
-  assert.match(routes, /router\.post\('\/api\/accountant\/external-businesses\/:id\/transactions',requireAuth,requirePermission\('expenses\.manage'\)/);
-  assert.match(routes, /router\.post\('\/api\/accountant\/shared-expenses',requireAuth,requirePermission\('expenses\.manage'\)/);
-  assert.match(routes, /router\.put\('\/api\/accountant\/shared-expenses\/:id',requireAuth,requirePermission\('expenses\.manage'\)/);
+  assert.match(routes, /router\.post\('\/api\/accountant\/external-businesses\/:id\/transactions',requireAuth,requirePermission\('external_businesses\.manage'\)/);
+  assert.match(routes, /router\.post\('\/api\/accountant\/shared-expenses',requireAuth,requirePermission\('shared_expenses\.manage'\)/);
+  assert.match(routes, /router\.put\('\/api\/accountant\/shared-expenses\/:id',requireAuth,requirePermission\('shared_expenses\.manage'\)/);
 });

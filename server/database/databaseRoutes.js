@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const { requireAuth, requirePermission } = require('../auth/middleware');
 const { audit } = require('../audit/auditService');
 const backupService = require('./backupService');
-const { logFile, logError, safeError } = require('../security/logger');
+const { logError, safeError } = require('../security/logger');
 
 const router = express.Router();
 const canManage = requirePermission('settings.manage');

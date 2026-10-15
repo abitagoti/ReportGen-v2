@@ -1,5 +1,5 @@
 import {state,$,$$,esc,can,normalizedRole,isLimitedRole,payrollTotalsOnly,staffReadOnlyView} from './state.js';
-import {api,loadWorkspace,loadWorkspaceExtras,loadBusinesses,loadSalesSummary,loadDashboardSummary} from './api.js';
+import {api,loadWorkspace,loadWorkspaceExtras,loadSalesSummary,loadDashboardSummary} from './api.js';
 import {startup} from './pages/startup.js';
 import {login,setup,applyTheme} from './pages/auth.js';
 import {dashboard,bindDashboard} from './pages/dashboard.js';
@@ -11,7 +11,7 @@ import {settings} from './pages/settings.js';
 import {users,bindUsers} from './pages/users.js';
 import {pageShell,logo,isAccountant,toast,runWithLoading} from './components/ui.js';
 import {payrollPage,bindPayrollPage,staffPage,bindStaffPage,payrollDetailPage,bindPayrollDetailPage,staffDetailPage,bindStaffDetailPage,deductionsPage,bindDeductionsPage} from './pages/payroll.js';
-import {capitalPage,bindCapital,loadCapital} from './pages/capital.js';
+import {capitalPage,bindCapital} from './pages/capital.js';
 import {ownerExpensesPage,bindOwnerExpenses} from './pages/ownerExpenses.js';
 import {syncAccountantMonth} from './pages/accountant.js';
 import {analysisPage,bindAnalysis} from './pages/analysis.js';
@@ -55,6 +55,8 @@ async function boot(){
     app.innerHTML=`<div class="screen" style="display:grid;place-items:center"><div style="text-align:center">${logo(null,'')}<h2 style="font-family:Montserrat">Workspace check failed</h2><p class="small">${esc(e.message||'Unable to determine workspace status.')}</p><button class="btn primary" id="retry">Retry connection</button></div></div>`;$('#retry').onclick=boot;
   }
 }
+
+window.addEventListener('reportgen:permissions-changed',()=>{if(state.user)render();});
 
 function render(){
   const pagePermission={'general-company-report':'dashboard.view','shared-expenses':'shared_expenses.view','external-businesses':'external_businesses.view',dashboard:'dashboard.view',businesses:'businesses.view','vendor-payments':'vendor_payments.view',sales:'sales.view',history:'history.view',expenses:'expenses.view',purchases:'capital.view',analytics:'comparison.view',comparison:'comparison.view',reports:'reports.view',payroll:'payroll.view',deductions:'payroll.deductions',staff:'staff.view',users:'users.manage',settings:'settings.manage',messages:'messages.send',audit:'audit.view'};

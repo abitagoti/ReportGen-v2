@@ -3,10 +3,6 @@ const { createVerifiedBackup, listBackups } = require('./backupService');
 let timer = null;
 let running = false;
 
-function isLastDay(date = new Date()) {
-  const nextDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-  return nextDay.getMonth() !== date.getMonth();
-}
 
 function monthKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -47,4 +43,4 @@ function stopMonthlyBackupScheduler() {
   timer = null;
 }
 
-module.exports = { startMonthlyBackupScheduler, stopMonthlyBackupScheduler, isLastDay };
+module.exports = { startMonthlyBackupScheduler, stopMonthlyBackupScheduler };

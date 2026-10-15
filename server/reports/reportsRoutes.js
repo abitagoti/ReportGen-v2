@@ -355,14 +355,6 @@ router.post('/api/reports/export/word', reportWorkloadLimit, requirePermission('
 function exportSafeFile(value) { return String(value || 'Report').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'Report'; }
 function stripHtml(value) { return String(value || '').replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim(); }
 const MANAGER_SECTION_KEYS = new Set(['intro','summary','comparison','sales','selling','profitable','groups','returns','expenses','businesses','payroll','commentary']);
-function sanitizeSectionHtml(value) {
-  return String(value || '')
-    .replace(/<\/?(?:script|style|iframe|object|embed|form|input|button|textarea|select|link|meta)[^>]*>/gi, '')
-    .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-    .replace(/\s(?:href|src)\s*=\s*(['"])\s*javascript:[\s\S]*?\1/gi, '')
-    .replace(/javascript:/gi, '')
-    .slice(0, 500000);
-}
 function accessibleBusinessIds(req) {
   const role = String(req.user?.role || '').toLowerCase();
   if (['owner','general_manager','administrator','admin'].includes(role)) {
@@ -385,20 +377,12 @@ function assertExportScope(req, body) {
     throw error;
   }
 }
-function managerSections(body) {
-  if (!Array.isArray(body?.sections)) return [];
-  return body.sections
-    .filter(s => s && MANAGER_SECTION_KEYS.has(String(s.key)) && typeof s.title === 'string')
-    .slice(0, 20)
-    .map(s => ({ key: String(s.key), title: String(s.title).slice(0, 200), html: sanitizeSectionHtml(s.html) }));
-}
 function htmlEsc(value) {
   return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 function trustedManagerData(req, validation) {
   const month = validation.month;
   const ids = validation.ids.map(String);
-  const placeholders = ids.map(() => '?').join(',');
   const [year, mon] = month.split('-').map(Number);
   const previousDate = new Date(Date.UTC(year, mon - 2, 1));
   const previousMonth = `${previousDate.getUTCFullYear()}-${String(previousDate.getUTCMonth() + 1).padStart(2, '0')}`;
@@ -414,7 +398,6 @@ function trustedManagerData(req, validation) {
     const expenses = db.prepare(`SELECT expense_date AS date,category,description,amount FROM accountant_expenses WHERE company_id=? AND business_id=? AND expense_date BETWEEN ? AND ? ORDER BY expense_date DESC,created_at DESC`).all(req.user.company_id,businessId,start,end).map(r=>({date:r.date,category:r.category,description:r.description,amount:Number(r.amount||0)}));
     return {current,previous,daily,topProducts,topProfitable,categories,returns:{amount:Number(returns?.amount||0),transactions:Number(returns?.transactions||0)},expenses};
   });
-  const sum=(items,key)=>items.reduce((a,x)=>a+Number(x[key]||0),0);
   const aggregate=(items,which='current')=>items.reduce((a,d)=>{
     const x=which==='current'?d.current:d.previous,s=x.summary||{},f=x.financials||{};
     a.sales+=Number(s.sales||0);a.gross+=Number(s.gross||0);a.returns+=Number(s.returns||0);a.transactions+=Number(s.transactions||0);a.costOfGoods+=Number(f.costOfGoods||0);a.grossProfit+=Number(f.grossProfit||0);a.expenses+=Number(f.expenses||0);a.payroll+=Number(f.payroll||0);a.netProfit+=Number(f.netProfit||0);a.purchases+=Number(f.purchases||0);return a;
@@ -429,7 +412,6 @@ function trustedManagerData(req, validation) {
   const returnRows=details.map(d=>[d.current.name,d.returns.amount,d.returns.transactions]);
   const table=(headers,rows)=>`<table><thead><tr>${headers.map(htmlEsc).map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(htmlEsc).map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
   const moneyText=v=>money(v);
-  const selectedKeys=Array.isArray(bodySections(body))?bodySections(body):[];
   const all={
     intro:`<p>This server-generated report covers the selected assigned-business scope for ${htmlEsc(month)}. Financial values are calculated from ReportGen source records and are not taken from client-supplied report HTML.</p>`,
     summary:table(['Metric','Value'],[['Total sales',moneyText(current.sales)],['Cost of goods',moneyText(current.costOfGoods)],['Gross profit',moneyText(current.grossProfit)],['Operating expenses',moneyText(current.expenses)],['Payroll',moneyText(current.payroll)],['Net profit',moneyText(current.netProfit)],['Transactions',current.transactions.toLocaleString()],['Returns',moneyText(current.returns)],['Return rate',current.gross?`${(current.returns/current.gross*100).toFixed(2)}%`:'0.00%']]),

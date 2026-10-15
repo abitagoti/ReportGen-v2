@@ -13,10 +13,19 @@ test('business manager default permissions do not include capital access', () =>
   assert.equal(/capital\.view|capital\.manage/.test(match[1]), false);
 });
 
-test('business access middleware enforces tenant company scope', () => {
-  const source = read('server/auth/middleware.js');
-  assert.match(source, /JOIN businesses b ON b\.id = a\.business_id/);
-  assert.match(source, /b\.company_id = \?/);
+test('business access helpers enforce tenant company scope', () => {
+  // Each route module resolves business access itself; every one must join businesses and filter by the caller's company.
+  const scoped = /company_id\s*=\s*\?/;
+  assert.match(read('server/sales/salesRoutes.js'), /function access\(req,businessId\)\{[^\n]*JOIN user_business_access a ON a\.business_id=b\.id WHERE b\.id=\? AND b\.company_id=\?/);
+  for (const [file, helper] of [['server/payroll/payrollRoutes.js', 'assignedBusinessIds'], ['server/dashboard/dashboardRoutes.js', 'businessIdsFor'], ['server/accountant/accountantRoutes.js', 'assignedBusinessIds']]) {
+    const source = read(file);
+    const start = source.indexOf(`function ${helper}(req`);
+    assert.ok(start >= 0, `${file} ${helper} missing`);
+    const body = source.slice(start, start + 700);
+    assert.match(body, /JOIN user_business_access a ON a\.business_id=b\.id WHERE b\.company_id=\? AND b\.is_active=1 AND a\.user_id=\?/, `${file} must scope assigned businesses to the caller's company`);
+    assert.match(body, scoped);
+  }
+  assert.match(read('server/vendor/vendorPaymentRoutes.js'), /JOIN businesses b ON b\.id=a\.business_id WHERE a\.user_id=\? AND a\.business_id=\? AND b\.company_id=\?/);
 });
 
 test('owner expense allocation endpoints remain Owner-only', () => {

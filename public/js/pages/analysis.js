@@ -5,7 +5,6 @@ import {pageShell,toast} from '../components/ui.js';
 let cacheKey='';
 let records=[];
 let loading=false;
-let detailBusinessId=null;
 let purchaseRecords=[];
 
 const n=v=>Number(v||0);

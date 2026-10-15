@@ -1,4 +1,4 @@
-import {state,esc,money,can,normalizedRole,dateRangeLabel} from '../state.js';
+import {state,esc,money,normalizedRole,dateRangeLabel} from '../state.js';
 import {api,loadDashboardSummary} from '../api.js';
 import {pageShell,logo,toast,roleLabel,modal} from '../components/ui.js';
 
@@ -27,7 +27,6 @@ export function dashboard(){
   const ownerPercent=Number(t.ownerPercent||0);
   const defaultOwnerPercent=Number(t.defaultOwnerPercent||0);
   const selectedExcluded=!!d.ownerAllocation?.selectedExcluded;
-  const allocationRows=d.ownerAllocation?.allocations||[];
   const ownerMonths=d.ownerAllocation?.months||[];
   const ownerBreakdown=ownerMonths.length>1?`<div class="owner-monthly-breakdown"><div class="eyebrow">Month-by-month allocation</div><div class="mini-list">${ownerMonths.map(m=>`<div class="mini-row"><div><strong>${esc(monthName(m.month))}</strong><span>${esc(m.start)} → ${esc(m.end)} · Default ${Number(m.defaultPercent||0)}%</span></div><div style="text-align:right"><strong>${money(m.ownerExpense)}</strong><span>CEO / Owner expense</span></div></div>`).join('')}</div></div>`:'';
   const singleOwnerMonth=ownerMonths.length===1?ownerMonths[0]:null;

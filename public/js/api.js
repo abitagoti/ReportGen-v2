@@ -13,6 +13,27 @@ export function submissionKey(form,prefix='submit'){
   return form.dataset.reportgenIdempotencyKey;
 }
 
+// The server enforces permission changes immediately, but the browser only loads permissions at sign-in. When a request
+// is refused, quietly re-read this user's effective permissions (at most once every 15 seconds); if they changed,
+// update the sidebar and page without making the user reload.
+let lastPermissionRefresh=0;
+async function refreshPermissionsAfterDenied(url){
+  if(!state.user||String(url).startsWith('/api/permissions/effective'))return;
+  const now=Date.now();
+  if(now-lastPermissionRefresh<15000)return;
+  lastPermissionRefresh=now;
+  try{
+    const r=await fetch('/api/permissions/effective',{credentials:'same-origin'});
+    if(!r.ok)return;
+    const d=await r.json();
+    const next=Object.fromEntries((d.permissions||[]).map(x=>[x.key,!!x.enabled]));
+    if(JSON.stringify(next)!==JSON.stringify(state.permissions)){
+      state.permissions=next;
+      window.dispatchEvent(new CustomEvent('reportgen:permissions-changed'));
+    }
+  }catch{}
+}
+
 export async function api(url,opts={}){
   const o={...opts,headers:{...(opts.headers||{})}};
   const method=(o.method||'GET').toUpperCase();
@@ -46,7 +67,7 @@ export async function api(url,opts={}){
     if(lastError)throw lastError;
     let d={};
     try{d=await r.json()}catch{}
-    if(!r.ok){const error=new Error(d.error||`Request failed (${r.status})`);error.status=r.status;throw error;}
+    if(!r.ok){if(r.status===403)void refreshPermissionsAfterDenied(url);const error=new Error(d.error||`Request failed (${r.status})`);error.status=r.status;throw error;}
     return d;
   }finally{
     if(showLoading)endLoading();
@@ -82,8 +103,7 @@ export async function loadBusinesses(month=state.dashboardMonth,opts={}){
 }
 
 export async function loadWorkspace(){
-  const role=encodeURIComponent(state.user?.role||'viewer');
-  const p=await api('/api/permissions/'+role);
+  const p=await api('/api/permissions/effective');
   state.permissions=Object.fromEntries((p.permissions||[]).map(x=>[x.key,!!x.enabled]));
   const month=state.dashboardMonth;
   const start=state.dashboardStart||`${month}-01`;

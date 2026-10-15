@@ -12,8 +12,8 @@ assert(/function trustedManagerData\(req, validation\)/.test(reports), 'Trusted 
 assert(/function trustedManagerSections\(req, body, validation\)/.test(reports), 'Trusted Business Manager section builder is missing.');
 assert(/const sections = trustedManagerSections\(req, req\.body, validation\);/.test(reports), 'Manager Excel/Word exports must use trusted server-generated sections.');
 
-// The old client-HTML sanitizer must not be the export source.
-assert(/function managerSections\(body\)/.test(reports), 'Manager section parser should remain available for compatibility.');
+// The old client-HTML section parser has been removed; exports must never take client-supplied HTML.
+assert(!/function managerSections\(/.test(reports), 'The unused client-HTML section parser must stay removed.');
 const exportUsesClientSections = /router\.post\('\/api\/reports\/export\/manager\/(?:excel|word)'[\s\S]*?const sections = managerSections\(req\.body\)/.test(reports);
 assert(!exportUsesClientSections, 'Manager exports must not trust client-supplied HTML sections.');
 

@@ -2,7 +2,7 @@ import {state,esc,money,normalizedRole} from '../state.js';
 import {api} from '../api.js';
 import {pageShell,toast} from '../components/ui.js';
 
-let reportRows=[];let reportLoading=false;let reportError='';
+let reportRows=[];
 const owner=()=>normalizedRole(state.user?.role)==='owner';
 const monthNow=()=>state.dashboardMonth||new Date().toISOString().slice(0,7);
 const monthEnd=m=>`${m}-${String(new Date(Date.UTC(Number(m.slice(0,4)),Number(m.slice(5,7)),0)).getUTCDate()).padStart(2,'0')}`;

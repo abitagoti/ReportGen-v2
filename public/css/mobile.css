@@ -59,7 +59,7 @@ img,svg,canvas{max-width:100%}
   .btn{min-height:42px}
   .page-intro{margin-bottom:18px;gap:14px}
   .page-intro h2{font-size:24px}
-  .page-intro .btn,.page-intro .period-controls{width:100%}
+  .page-intro .btn{width:100%}
 
   /* Modals use the full width of the phone */
   .modal,.modal-content,.modal-scroll{max-width:100%}
@@ -107,7 +107,7 @@ body:has(.modal-backdrop){overflow:hidden}
   .modal-actions .btn{flex:1 1 140px}
 
   /* Multi-column forms inside modals become one column */
-  .modal .form-grid,.modal .setup-grid,.modal .grid-2,.modal .grid-3,.modal .two-col,.modal .form-row{grid-template-columns:1fr!important}
+  .modal .form-grid,.modal .setup-grid,.modal .grid-2{grid-template-columns:1fr!important}
   .modal .field,.modal .input,.modal .select,.modal .textarea{min-width:0;max-width:100%}
   .modal .input{width:100%}
 

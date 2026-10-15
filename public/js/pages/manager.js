@@ -1,4 +1,4 @@
-import {state,esc,money,normalizedRole,isLimitedRole,dateRangeLabel} from '../state.js';
+import {state,esc,money,isLimitedRole,dateRangeLabel} from '../state.js';
 import {api} from '../api.js';
 import {pageShell,toast} from '../components/ui.js';
 
@@ -49,7 +49,7 @@ function expenseRows(rows){
 }
 function businessRows(rows,previous,noCurrentData=false){
   const previousMap=new Map(previous.map(r=>[r.business?.id,r]));
-  return rows.map(r=>{const s=r.summary||{},f=r.financials||{},p=previousMap.get(r.business?.id)||{};const ps=p.summary||{},pf=p.financials||{};return `<tr><td><strong>${esc(r.business?.name||'Business')}</strong></td><td>${money(s.sales)}</td><td>${money(f.grossProfit)}</td><td>${money(f.expenses)}</td><td>${money(f.payroll)}</td><td>${money(f.netProfit)}</td><td>${n(s.transactions).toLocaleString()}</td><td>${delta(n(s.sales),n(ps.sales))}</td></tr>`;});
+  return rows.map(r=>{const s=r.summary||{},f=r.financials||{},p=previousMap.get(r.business?.id)||{};const ps=p.summary||{};return `<tr><td><strong>${esc(r.business?.name||'Business')}</strong></td><td>${money(s.sales)}</td><td>${money(f.grossProfit)}</td><td>${money(f.expenses)}</td><td>${money(f.payroll)}</td><td>${money(f.netProfit)}</td><td>${n(s.transactions).toLocaleString()}</td><td>${delta(n(s.sales),n(ps.sales))}</td></tr>`;});
 }
 function dailyChart(rows){
   const daily=dailySeries(rows);if(!daily.length)return empty('No daily sales data available for this period.');
@@ -71,7 +71,7 @@ function managerSelectedSections(){return [...document.querySelectorAll('[data-m
 function managerApplySectionVisibility(){const selected=new Set(managerSelectedSections());document.querySelectorAll('.manager-report-root [data-report-section]').forEach(section=>section.classList.toggle('report-section-hidden',!selected.has(section.dataset.reportSection)));}
 async function exportManagerReport(format){
   const selected=new Set(managerSelectedSections());
-  const scopedCurrent=scopedManagerRows(currentRows),scopedPrevious=scopedManagerRows(previousRows);
+  const scopedCurrent=scopedManagerRows(currentRows);
   const sections=[...document.querySelectorAll('.manager-report-root [data-report-section]')].filter(section=>selected.has(section.dataset.reportSection)).map(section=>({key:section.dataset.reportSection,title:section.dataset.reportTitle||section.querySelector('h4')?.textContent||section.dataset.reportSection,html:section.innerHTML}));
   if(!sections.length){toast('Select at least one report section to export.');return;}
   const button=document.getElementById(format==='excel'?'managerExportExcel':'managerExportWord');if(button)button.disabled=true;
@@ -86,7 +86,7 @@ async function exportManagerReport(format){
   }catch(error){console.error('Business Manager report export failed:',error);toast(error.message||'Export failed.');}finally{if(button)button.disabled=false;}
 }
 function reportBody(month,current,previous){
-  const t=aggregate(current),p=aggregate(previous);const noCurrentData=t.transactions===0&&t.sales===0&&t.gross===0;const noPreviousData=p.transactions===0&&p.sales===0&&p.gross===0;const salesDays=daysInMonth(month);const products=combineList(current,'topProducts','productName').sort((a,b)=>b.sales-a.sales).slice(0,10);const profitable=combineList(current,'topProfitable','productName').sort((a,b)=>b.profit-a.profit).slice(0,10);const groups=combineList(current,'categories','category').sort((a,b)=>b.sales-a.sales);const expenses=expenseRows(current);const previousLabel=monthLabel(previousMonth(month));
+  const t=aggregate(current),p=aggregate(previous);const noCurrentData=t.transactions===0&&t.sales===0&&t.gross===0;const salesDays=daysInMonth(month);const products=combineList(current,'topProducts','productName').sort((a,b)=>b.sales-a.sales).slice(0,10);const profitable=combineList(current,'topProfitable','productName').sort((a,b)=>b.profit-a.profit).slice(0,10);const groups=combineList(current,'categories','category').sort((a,b)=>b.sales-a.sales);const expenses=expenseRows(current);const previousLabel=monthLabel(previousMonth(month));
   const highest=dailySeries(current).sort((a,b)=>b.sales-a.sales)[0];const lowest=dailySeries(current).filter(d=>n(d.sales)>0).sort((a,b)=>a.sales-b.sales)[0];
   return `<div class="report-print-root manager-report-root">
     ${noCurrentData?`<div class="report-data-notice"><strong>No current-month sales activity recorded.</strong><span>Figures are shown as returned by the selected source records. Confirm the import and reporting period before using month-on-month comparisons.</span></div>`:''}
@@ -111,7 +111,6 @@ export function managerReportsPage(){
   const month=monthDefault();
   if(loading)return pageShell('Reports','<div class="empty">Loading assigned business report…</div>');
   if(!loadedKey)return pageShell('Reports','<div class="empty">Preparing your assigned business report…</div>');
-  const previous=previousMonth(month);
   const businessOptions=state.businesses.filter(b=>b.isActive!==0).map(b=>`<option value="${esc(b.id)}" ${String(b.id)===managerReportBusinessId?'selected':''}>${esc(b.name)}</option>`).join('');
   return pageShell('Reports',`<div class="page-intro report-controls"><div><div class="eyebrow">Business Manager workspace</div><h2>Full Financial Report</h2><p>Assigned business performance, financial summary, and month-on-month comparison.</p></div><div class="form-grid"><label class="field"><span>Business scope</span><select class="input" id="managerReportBusiness"><option value="">All assigned businesses</option>${businessOptions}</select></label><label class="field"><span>Reporting month</span><input class="input" id="managerReportMonth" type="month" value="${esc(month)}"></label></div></div>${reportBody(month,scopedManagerRows(currentRows),scopedManagerRows(previousRows))}`);
 }

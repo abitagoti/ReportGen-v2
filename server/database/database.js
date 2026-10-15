@@ -328,15 +328,26 @@ function migrate() {
   );
   CREATE INDEX IF NOT EXISTS idx_idempotency_updated ON idempotency_keys(updated_at);`);
 
-  // Audit integrity: application users may append audit records through auditService,
-  // but live audit entries cannot be updated or deleted through SQLite, including by
-  // accidental maintenance code. Database restore/reset remains a separate administrative
-  // operation and is itself audited where the application performs it.
+  // Audit integrity: application users may append audit records through auditService.
+  // Audit entries remain append-only except that deleting a user may anonymize its actor
+  // foreign key to NULL; every other audit field stays immutable. Database restore/reset
+  // remains a separate administrative operation.
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_audit_company_action ON audit_logs(company_id, action, created_at);
     CREATE INDEX IF NOT EXISTS idx_audit_company_user_time ON audit_logs(company_id, user_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_audit_company_business_time ON audit_logs(company_id, business_id, created_at);
-    CREATE TRIGGER IF NOT EXISTS trg_audit_logs_no_update BEFORE UPDATE ON audit_logs BEGIN SELECT RAISE(ABORT, 'audit_logs are append-only'); END;
+    DROP TRIGGER IF EXISTS trg_audit_logs_no_update;
+    CREATE TRIGGER trg_audit_logs_no_update
+    BEFORE UPDATE ON audit_logs
+    WHEN NOT (
+      OLD.user_id IS NOT NULL AND NEW.user_id IS NULL
+      AND NEW.id IS OLD.id AND NEW.company_id IS OLD.company_id
+      AND NEW.action IS OLD.action AND NEW.entity_type IS OLD.entity_type
+      AND NEW.entity_id IS OLD.entity_id AND NEW.business_id IS OLD.business_id
+      AND NEW.details_json IS OLD.details_json AND NEW.ip_address IS OLD.ip_address
+      AND NEW.user_agent IS OLD.user_agent AND NEW.created_at IS OLD.created_at
+    )
+    BEGIN SELECT RAISE(ABORT, 'audit_logs are append-only except deleted-user anonymization'); END;
     CREATE TRIGGER IF NOT EXISTS trg_audit_logs_no_delete BEFORE DELETE ON audit_logs BEGIN SELECT RAISE(ABORT, 'audit_logs are append-only'); END;
   `);
 
@@ -596,7 +607,48 @@ function migrateSalaryPermission() {
     FROM role_permissions WHERE permission = 'payroll.view'`).run(new Date().toISOString());
 }
 
+// Early development builds stored individual permission overrides with a `decision` column. CREATE TABLE IF NOT EXISTS
+// never upgrades such a table, so rebuild it into the current `effect` schema. Atomic: the old table is only dropped
+// after the new one has been filled, and any failure rolls everything back and leaves the old table untouched.
+function migrateUserPermissionOverrides() {
+  const cols = db.prepare('PRAGMA table_info(user_permission_overrides)').all().map(c => c.name);
+  if (!cols.length || cols.includes('effect') || !cols.includes('decision')) return { migrated: false };
+  const idExpr = cols.includes('id') ? 'o.id' : "'uperm_' || lower(hex(randomblob(8)))";
+  const map = `CASE lower(trim(o.decision)) WHEN 'allow' THEN 'allow' WHEN 'allowed' THEN 'allow' WHEN 'grant' THEN 'allow' WHEN 'granted' THEN 'allow' WHEN '1' THEN 'allow'
+    WHEN 'deny' THEN 'deny' WHEN 'denied' THEN 'deny' WHEN 'revoke' THEN 'deny' WHEN 'revoked' THEN 'deny' WHEN '0' THEN 'deny' END`;
+  const result = { migrated: true, legacyRows: 0, copiedRows: 0 };
+  db.transaction(() => {
+    result.legacyRows = db.prepare('SELECT COUNT(*) AS n FROM user_permission_overrides').get().n;
+    db.exec('ALTER TABLE user_permission_overrides RENAME TO user_permission_overrides_legacy');
+    db.exec(`CREATE TABLE user_permission_overrides (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      permission TEXT NOT NULL,
+      effect TEXT NOT NULL CHECK(effect IN ('allow','deny')),
+      updated_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(company_id, user_id, permission)
+    )`);
+    // Newest row wins when a legacy table held duplicates. Rows that map to neither allow nor deny, or whose user no longer exists, are dropped.
+    db.prepare(`INSERT OR IGNORE INTO user_permission_overrides (id, company_id, user_id, permission, effect, updated_by, updated_at)
+      SELECT ${idExpr},
+             ${cols.includes('company_id') ? 'o.company_id' : 'u.company_id'}, o.user_id, o.permission, ${map},
+             ${cols.includes('updated_by') ? '(SELECT id FROM users WHERE id = o.updated_by)' : 'NULL'},
+             COALESCE(${cols.includes('updated_at') ? 'o.updated_at' : 'NULL'}, ?)
+      FROM user_permission_overrides_legacy o JOIN users u ON u.id = o.user_id
+      WHERE ${map} IS NOT NULL
+      ORDER BY ${cols.includes('updated_at') ? 'o.updated_at DESC' : 'o.rowid DESC'}`).run(new Date().toISOString());
+    result.copiedRows = db.prepare('SELECT COUNT(*) AS n FROM user_permission_overrides').get().n;
+    db.exec('DROP TABLE user_permission_overrides_legacy');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_user_permission_overrides_user ON user_permission_overrides(company_id, user_id)');
+  })();
+  console.log(`[DATABASE] Individual permission overrides upgraded from legacy schema: ${result.copiedRows} of ${result.legacyRows} rows kept.`);
+  return result;
+}
+
 migrate();
+migrateUserPermissionOverrides();
 migrateSalaryPermission();
 // Stage 10D: fail closed if SQLite or tenant-scoped relational integrity is broken.
 const { verifyDatabaseIntegrity } = require('./integrity');
@@ -613,4 +665,4 @@ const queryPlannerMaintenance = setInterval(() => {
 }, 24 * 60 * 60 * 1000);
 queryPlannerMaintenance.unref?.();
 
-module.exports = { db, health, migrateSalaryPermission };
+module.exports = { db, health, migrateSalaryPermission, migrateUserPermissionOverrides };

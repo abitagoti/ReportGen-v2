@@ -8,7 +8,6 @@ let loadedRange='';
 let filterMonth=new Date().toISOString().slice(0,7);
 
 const monthRange=month=>({start:`${month}-01`,end:`${month}-${String(new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5,7)),0)).getUTCDate()).padStart(2,'0')}`});
-const businessName=id=>state.businesses.find(b=>b.id===id)?.name||'Company-wide';
 const escAttr=esc;
 const ownerRoles=['owner','general_manager','administrator','admin'];
 const canManageAll=()=>ownerRoles.includes(String(state.user?.role||'').toLowerCase());
@@ -16,12 +15,13 @@ const canManageAll=()=>ownerRoles.includes(String(state.user?.role||'').toLowerC
 function totals(items){return items.reduce((s,x)=>s+Number(x.amount||0),0)}
 function canDeleteRecord(x){
   const userId=state.user?.user_id||state.user?.id;
-  const role=String(state.user?.role||'').toLowerCase();
-  return canManageAll() || (role==='business_manager' && String(x.createdBy||'')===String(userId||''));
+  // Mirrors the server: company-wide roles manage everything; anyone else holding capital.manage only their own assigned-business records.
+  return canManageAll() || (can('capital.manage') && !!x.businessId && String(x.createdBy||'')===String(userId||''));
 }
+const canEditRecord=x=>canDeleteRecord(x);
 function actionButtons(x){
   const id=escAttr(x.id);
-  return `<div class="table-actions compact-actions"><button class="btn tiny ghost" data-view-purchase="${id}">View</button>${canManageAll()?`<button class="btn tiny ghost" data-edit-purchase="${id}">Edit</button>`:''}${canDeleteRecord(x)?`<button class="btn tiny danger" data-delete-purchase="${id}">Delete</button>`:''}</div>`;
+  return `<div class="table-actions compact-actions"><button class="btn tiny ghost" data-view-purchase="${id}">View</button>${canEditRecord(x)?`<button class="btn tiny ghost" data-edit-purchase="${id}">Edit</button>`:''}${canDeleteRecord(x)?`<button class="btn tiny danger" data-delete-purchase="${id}">Delete</button>`:''}</div>`;
 }
 function purchaseDate(x){return x.entryMode==='monthly_total'?String(x.periodStart||'').slice(0,7):x.purchaseDate||x.periodStart||''}
 function table(items){
@@ -38,7 +38,7 @@ export function capitalPage(){
 }
 
 function formMarkup(record={}){
-  const manager=String(state.user?.role||'').toLowerCase()==='business_manager';
+  const manager=!canManageAll();
   const selected=record.businessId||state.businesses[0]?.id||'';
   const options=state.businesses.map(b=>`<option value="${escAttr(b.id)}" ${selected===b.id?'selected':''}>${esc(b.name)}</option>`).join('');
   const date=record.entryMode==='monthly_total'?String(record.periodStart||`${filterMonth}-01`).slice(0,7)+'-01':record.purchaseDate||record.periodStart||`${filterMonth}-01`;
@@ -71,5 +71,3 @@ export async function bindCapital(){
   document.querySelectorAll('[data-edit-purchase]').forEach(button=>button.addEventListener('click',()=>{const record=findRecord(button.dataset.editPurchase);if(record)openForm(record);}));
   document.querySelectorAll('[data-delete-purchase]').forEach(button=>button.addEventListener('click',async()=>{const record=findRecord(button.dataset.deletePurchase);if(!record)return;if(!confirm('Delete this purchase record? This action cannot be undone.'))return;try{await api(`/api/capital/${encodeURIComponent(record.id)}`,{method:'DELETE'});toast('Purchase deleted.');await load();window.ReportGen.render();}catch(err){toast(err.message)}}));
 }
-
-export async function loadCapital(){await load(true);}

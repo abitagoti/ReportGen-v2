@@ -103,9 +103,13 @@ router.post('/api/capital', requireAuth, requirePermission('capital.manage'), re
 
 
 router.patch('/api/capital/:id', requireAuth, requirePermission('capital.manage'), (req,res)=>{
-  if (!unrestricted.includes(req.user.role)) return res.status(403).json({error:'Only the Owner or administrator can change company-wide capital records.'});
   const current=db.prepare('SELECT * FROM capital_contributions WHERE id=? AND company_id=?').get(req.params.id,req.user.company_id);
   if(!current)return res.status(404).json({error:'Capital record not found.'});
+  // Company-wide roles may change any record. Anyone else who holds capital.manage (for example through an individual
+  // permission override) follows the same rule as delete: only records they created for a business they are assigned to.
+  const companyWide=unrestricted.includes(req.user.role);
+  if(!companyWide && !(current.created_by===req.user.user_id && current.business_id && canAccessBusiness(req,current.business_id)))
+    return res.status(403).json({error:'Only the Owner or the user who created this assigned-business record can change it.'});
   const p=schema.partial().safeParse(req.body||{});
   if(!p.success)return res.status(400).json({error:p.error.issues[0]?.message||'Invalid update.'});
   const v={
@@ -120,6 +124,7 @@ router.patch('/api/capital/:id', requireAuth, requirePermission('capital.manage'
   if(v.periodEnd<v.periodStart)return res.status(400).json({error:'Period end cannot be before period start.'});
   if(v.entryMode==='monthly_total' && v.periodStart.slice(0,7)!==v.periodEnd.slice(0,7))return res.status(400).json({error:'Monthly totals must cover one calendar month.'});
   if(v.businessId && !db.prepare('SELECT id FROM businesses WHERE id=? AND company_id=?').get(v.businessId,req.user.company_id))return res.status(404).json({error:'Business not found.'});
+  if(!companyWide && (!v.businessId || !canAccessBusiness(req,v.businessId)))return res.status(403).json({error:'You do not have access to this business.'});
   const conflict=conflictingPurchase(req,v,current.id);
   if(conflict)return res.status(409).json({error:v.entryMode==='monthly_total'?'A monthly total or individual purchase already exists for this business and month. Remove the existing records before entering a monthly total.':'A monthly total already exists for this business and month. Remove it before entering individual purchases.'});
   const now=nowIso();
@@ -136,8 +141,9 @@ router.delete('/api/capital/:id', requireAuth, requirePermission('capital.manage
   const current=db.prepare('SELECT * FROM capital_contributions WHERE id=? AND company_id=?').get(req.params.id,req.user.company_id);
   if(!current)return res.status(404).json({error:'Purchase record not found.'});
   const isOwner=unrestricted.includes(req.user.role);
-  const isOwnManagerRecord=req.user.role==='business_manager' && current.created_by===req.user.user_id && current.business_id && canAccessBusiness(req,current.business_id);
-  if (!isOwner && !isOwnManagerRecord) return res.status(403).json({error:'Only the Owner or the manager who created this assigned-business record can delete it.'});
+  // Any non-company-wide user holding capital.manage (role default or individual override) may delete only their own assigned-business records.
+  const isOwnManagerRecord=current.created_by===req.user.user_id && current.business_id && canAccessBusiness(req,current.business_id);
+  if (!isOwner && !isOwnManagerRecord) return res.status(403).json({error:'Only the Owner or the user who created this assigned-business record can delete it.'});
   const tx=db.transaction(()=>{
     db.prepare('DELETE FROM capital_contributions WHERE id=? AND company_id=?').run(current.id,req.user.company_id);
     audit(req,{action:'capital.deleted',entityType:'capital_contribution',entityId:current.id,businessId:current.business_id||null,details:{amount:Number(current.amount||0),entryMode:current.entry_mode}});

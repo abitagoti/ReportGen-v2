@@ -8,7 +8,6 @@ let loadedRange='';
 const managementRoles=['owner','general_manager','administrator','admin'];
 const isManagement=()=>managementRoles.includes(normalizedRole(state.user?.role));
 const range=()=>({start:state.dashboardStart||`${state.dashboardMonth}-01`,end:state.dashboardEnd||`${state.dashboardMonth}-${String(new Date(Date.UTC(Number(state.dashboardMonth.slice(0,4)),Number(state.dashboardMonth.slice(5,7)),0)).getUTCDate()).padStart(2,'0')}`});
-const businessName=id=>state.businesses.find(b=>b.id===id)?.name||'Company-wide';
 const escAttr=esc;
 const total=items=>items.reduce((s,x)=>s+Number(x.amount||0),0);
 

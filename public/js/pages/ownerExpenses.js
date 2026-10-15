@@ -8,7 +8,6 @@ let rows=[];
 let view='overview';
 let selectedBusiness='';
 
-function monthLabel(month){return new Date(`${month}-01T00:00:00`).toLocaleDateString('en-NG',{month:'long',year:'numeric'});}
 function total(list=rows){return list.reduce((sum,row)=>sum+Number(row.amount||0),0);}
 function expenseItem(row){return row.category||row.description||'Uncategorized';}
 function businesses(){return [...new Map(rows.map(row=>[row.businessId,{id:row.businessId,name:row.businessName||row.businessId}])).values()].sort((a,b)=>a.name.localeCompare(b.name));}
@@ -42,7 +41,6 @@ function recordPage(){
 }
 
 export function ownerExpensesPage(){
-  const month=state.dashboardMonth;
   return pageShell('Expenses',`<div class="page-intro"><div><div class="eyebrow">Owner workspace</div><h2>Expenses</h2><p>Company-wide operating expenses for ${esc(dateRangeLabel())}. Open a business card to inspect its detailed record.</p></div><div class="actions"><button class="btn" id="refreshOwnerExpenses">Refresh</button></div></div><div class="kpis"><div class="kpi"><div class="kpi-top"><span>Total expenses</span><span class="kpi-icon">₦</span></div><div class="kpi-value">${money(total())}</div><div class="kpi-note">${esc(dateRangeLabel())}</div></div><div class="kpi"><div class="kpi-top"><span>Expense records</span><span class="kpi-icon">≡</span></div><div class="kpi-value">${rows.length}</div><div class="kpi-note">Company-wide</div></div><div class="kpi"><div class="kpi-top"><span>Businesses affected</span><span class="kpi-icon">▦</span></div><div class="kpi-value">${businesses().length}</div><div class="kpi-note">Selected period</div></div></div>${view==='record'?recordPage():overview()}`);
 }
 async function load(month){const start=state.dashboardStart||`${month}-01`,end=state.dashboardEnd||`${month}-31`;const data=await api(`/api/owner/expenses?month=${encodeURIComponent(month)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);rows=data.expenses||[];loadedMonth=month;loadedRange=`${start}:${end}`;if(selectedBusiness&&!businesses().some(b=>b.id===selectedBusiness))selectedBusiness='';}

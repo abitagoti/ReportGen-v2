@@ -1,6 +1,6 @@
 import {state,esc,money,can} from '../state.js';
 import {api,submissionKey} from '../api.js';
-import {pageShell,isAccountant,toast} from '../components/ui.js';
+import {pageShell,toast} from '../components/ui.js';
 import {dateFieldMarkup,bindCustomDateFields} from '../components/dateInput.js';
 let month=new Date().toISOString().slice(0,7), staff=[], businesses=[], departments=[], jobRoles=[], users=[], monthly=[], loans=[], loaded=false, payrollDetail=null, staffDetail=null;
 // Every capability below comes from the role's permission toggles, never from the role name.

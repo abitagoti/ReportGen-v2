@@ -25,4 +25,13 @@ function canEditRole(actorRole,targetRole){
   if(actor===target) return false;
   return ADMIN_ROLES.has(actor) || (!ADMIN_ROLES.has(target) && roleLevel(target)<=roleLevel(actor));
 }
-module.exports={ADMIN_ROLES,ROLE_LEVEL,normalizeRole,isAdministrator,roleLevel,canManageTargetRole,canEditRole};
+// Individual permission overrides change what an account can do, so they follow the same strictly-lower
+// rule as role permissions. Peers (two Owners, two General Managers) may still manage each other's
+// status and business access, but cannot raise or strip each other's permissions, which would let one
+// peer lock the other out of users.manage / roles.manage.
+function canOverrideTarget(actor,targetRole){
+  const target=normalizeRole(targetRole);
+  if(ADMIN_ROLES.has(target)) return false;
+  return isAdministrator(actor) || roleLevel(target)<roleLevel(actor?.role);
+}
+module.exports={ADMIN_ROLES,ROLE_LEVEL,normalizeRole,isAdministrator,roleLevel,canManageTargetRole,canEditRole,canOverrideTarget};

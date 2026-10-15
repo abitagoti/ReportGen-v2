@@ -1,7 +1,7 @@
 const express = require('express');
 const os = require('node:os');
 const config = require('../config');
-const { requireAuth, requireRole, requirePermission } = require('../auth/middleware');
+const { requireAuth, requirePermission } = require('../auth/middleware');
 
 const router = express.Router();
 

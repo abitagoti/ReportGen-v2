@@ -1,4 +1,3 @@
-const net = require('node:net');
 const config = require('../config');
 
 function stripHostPort(value) {
@@ -86,11 +85,6 @@ function enforceOriginPolicy(req, res, next) {
   next();
 }
 
-function allowedHttpsOrigin() {
-  const hostname = configuredHostname();
-  const port = config.httpsPort === 443 ? '' : `:${config.httpsPort}`;
-  return `https://${hostname}${port}`;
-}
 
 module.exports = {
   normalizeHostname,
@@ -98,6 +92,5 @@ module.exports = {
   requireAllowedHost,
   allowedOrigins,
   originAllowed,
-  enforceOriginPolicy,
-  allowedHttpsOrigin
+  enforceOriginPolicy
 };

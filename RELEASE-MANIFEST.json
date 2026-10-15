@@ -2,13 +2,13 @@
   "format": 1,
   "product": "ReportGen",
   "version": "2.0.20",
-  "generatedAt": "2026-10-14T14:44:02.797Z",
+  "generatedAt": "2026-10-15T12:24:47.483Z",
   "files": {
     "package.json": "ae33f6c53ecf3b5ba422d5c7a2472cb4e948fe1e4b5bd8955bf8b68e196dd6e9",
-    "electron-main.js": "de32cb822a3513bd3746bcbad773d89b7db8de02b10be73a2345e99e67dce2af",
-    "server/server.js": "00fab9f123db001ac9a9ddcb23072fe5934374a1fa434a6c3cf0aa18e500dfd7",
+    "electron-main.js": "29bc8f570795fc3a2c35f3c3eee176ae9be75637f2a69d57bb8991104875a7a8",
+    "server/server.js": "b46ff1a56729e2233f97459f4d5470a118a8efd495e5b0007821b578f1619036",
     "server/config.js": "2faee2ebf8687170d4c96bb066bae64ac6a2a5e39e9e329000a61fba904eeff2",
-    "server/database/database.js": "ee933ccbfd4b01f18dc1d6330a48f8b58469aea016308d5bf927de92ea583f6a",
+    "server/database/database.js": "deb6203eafe16fca29b46bd439f6df7f01bedca986d058ac7c16f661a187f3cf",
     "server/security/logger.js": "b4a96e02f9d131d81450f89323f4474f6e1786efa6baae9031a39304a03c298a",
     "server/security/resourceProtection.js": "23b41355070832c74d466092ed2e666b3d0ba977677d569ac5269ef0c26223b3"
   }

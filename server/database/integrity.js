@@ -11,7 +11,7 @@ const REQUIRED_TABLES = [
   'accountant_remittances','capital_contributions','vendor_payments','payroll_monthly_totals','payroll_payments',
   'payroll_employees','payroll_entries','payroll_staff_loans','payroll_loan_skips',
   'payroll_manual_staff_adjustments','payroll_loan_repayments','payroll_staff_deductions',
-  'role_permissions','idempotency_keys'
+  'role_permissions','user_permission_overrides','idempotency_keys'
 ];
 
 const REQUIRED_INDEXES = [
@@ -22,7 +22,7 @@ const REQUIRED_INDEXES = [
   'idx_capital_business_period','idx_vendor_payments_company_date',
   'idx_vendor_payments_business_date','idx_payroll_monthly_company_period',
   'idx_payroll_monthly_business_period','idx_payroll_payments_company_payroll','idx_payroll_employees_business',
-  'idx_payroll_entries_business_period','idx_staff_loans_staff',
+  'idx_payroll_entries_business_period','idx_staff_loans_staff','idx_user_permission_overrides_user',
   'idx_loan_skips_loan_month','idx_loan_skips_staff_month','idx_manual_staff_adjustments_period',
   'idx_loan_repayments_staff','idx_loan_repayments_business','idx_staff_deductions_staff',
   'idx_idempotency_updated'

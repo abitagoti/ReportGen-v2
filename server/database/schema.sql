@@ -44,6 +44,18 @@ CREATE TABLE IF NOT EXISTS user_business_access (
   PRIMARY KEY(user_id, business_id)
 );
 
+CREATE TABLE IF NOT EXISTS user_permission_overrides (
+  id TEXT PRIMARY KEY,
+  company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  permission TEXT NOT NULL,
+  effect TEXT NOT NULL CHECK(effect IN ('allow','deny')),
+  updated_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(company_id, user_id, permission)
+);
+CREATE INDEX IF NOT EXISTS idx_user_permission_overrides_user ON user_permission_overrides(company_id, user_id);
+
 CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -78,7 +90,17 @@ CREATE INDEX IF NOT EXISTS idx_audit_company_time ON audit_logs(company_id, crea
 CREATE INDEX IF NOT EXISTS idx_audit_company_action ON audit_logs(company_id, action, created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_company_user_time ON audit_logs(company_id, user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_company_business_time ON audit_logs(company_id, business_id, created_at);
-CREATE TRIGGER IF NOT EXISTS trg_audit_logs_no_update BEFORE UPDATE ON audit_logs BEGIN SELECT RAISE(ABORT, 'audit_logs are append-only'); END;
+CREATE TRIGGER IF NOT EXISTS trg_audit_logs_no_update
+BEFORE UPDATE ON audit_logs
+WHEN NOT (
+  OLD.user_id IS NOT NULL AND NEW.user_id IS NULL
+  AND NEW.id IS OLD.id AND NEW.company_id IS OLD.company_id
+  AND NEW.action IS OLD.action AND NEW.entity_type IS OLD.entity_type
+  AND NEW.entity_id IS OLD.entity_id AND NEW.business_id IS OLD.business_id
+  AND NEW.details_json IS OLD.details_json AND NEW.ip_address IS OLD.ip_address
+  AND NEW.user_agent IS OLD.user_agent AND NEW.created_at IS OLD.created_at
+)
+BEGIN SELECT RAISE(ABORT, 'audit_logs are append-only except deleted-user anonymization'); END;
 CREATE TRIGGER IF NOT EXISTS trg_audit_logs_no_delete BEFORE DELETE ON audit_logs BEGIN SELECT RAISE(ABORT, 'audit_logs are append-only'); END;
 
 CREATE TABLE IF NOT EXISTS import_templates (
@@ -215,6 +237,20 @@ CREATE TABLE IF NOT EXISTS external_business_transactions (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_external_transactions_business_date ON external_business_transactions(company_id,external_business_id,transaction_date);
+
+CREATE TABLE IF NOT EXISTS external_business_payroll_monthly (
+  id TEXT PRIMARY KEY,
+  company_id TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  external_business_id TEXT NOT NULL REFERENCES external_businesses(id) ON DELETE RESTRICT,
+  payroll_month TEXT NOT NULL,
+  amount REAL NOT NULL DEFAULT 0 CHECK(amount >= 0),
+  notes TEXT,
+  created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(company_id, external_business_id, payroll_month)
+);
+CREATE INDEX IF NOT EXISTS idx_external_payroll_month ON external_business_payroll_monthly(company_id,payroll_month,external_business_id);
 
 
 CREATE TABLE IF NOT EXISTS accountant_remittances (

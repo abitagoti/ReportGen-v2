@@ -9,7 +9,7 @@ const { requireAuth, requireCsrf } = require('./auth/middleware');
 const { startReverseProxy } = require('./deployment/reverseProxy');
 const { apiRateLimit } = require('./security/resourceProtection');
 const { enforceOriginPolicy } = require('./security/transport');
-const { requestLogger, requestId, safeError, info, warn, error: logError } = require('./security/logger');
+const { requestLogger, requestId, safeError, info, error: logError } = require('./security/logger');
 const { startLocalHostnameService, stopLocalHostnameService } = require('./network/hostnameService');
 
 const setupRoutes = require('./setup/setupRoutes');

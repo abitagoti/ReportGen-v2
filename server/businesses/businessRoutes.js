@@ -4,7 +4,7 @@ const { db } = require('../database/database');
 const { id } = require('../lib/ids');
 const { nowIso } = require('../lib/time');
 const { audit } = require('../audit/auditService');
-const { requireAuth, requireRole, requirePermission } = require('../auth/middleware');
+const { requireAuth, requirePermission } = require('../auth/middleware');
 const { hasPermission } = require('../permissions');
 
 const router = express.Router();
